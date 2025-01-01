@@ -30,7 +30,7 @@ export default function Home() {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             // Client-side API selection
-            setApiUrl(window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'http://13.228.36.212');
+            setApiUrl(window.location.hostname === 'localhost' ? 'http://localhost:4000' : 'http://13.228.36.212');
         }
     }, []);
 

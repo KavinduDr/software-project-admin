@@ -25,7 +25,7 @@ const SignUp: React.FC = () => {
         if (typeof window !== 'undefined') {
             // This will run only on the client side
             if (window.location.hostname === 'localhost') {
-                setApiUrl('http://localhost:5000');
+                setApiUrl('http://localhost:4000');
             } else {
                 setApiUrl('http://13.228.36.212');
             }
