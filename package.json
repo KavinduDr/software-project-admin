@@ -16,12 +16,14 @@
     "@nextui-org/theme": "^2.2.9",
     "axios": "^1.7.7",
     "framer-motion": "^11.3.28",
+    "js-cookie": "^3.0.5",
     "next": "14.2.5",
     "react": "^18",
     "react-dom": "^18",
     "react-router-dom": "^6.26.1"
   },
   "devDependencies": {
+    "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

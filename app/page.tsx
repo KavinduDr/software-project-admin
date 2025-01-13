@@ -6,6 +6,7 @@ import { useAdmin } from "./context/AdminContext";
 import axios from "axios";
 import Loading from "./components/Loader/Loading";
 
+
 export default function Home() {
     const router = useRouter();
     const [formData, setFormData] = useState({
@@ -35,6 +36,8 @@ export default function Home() {
         }
     }, []);
 
+    
+    
     const handleSignIn = async () => {
         setIsLoading(true);
         setShowLoading(false);
@@ -46,13 +49,14 @@ export default function Home() {
                 email: formData.email,
                 password: formData.password,
             });
-    
+            // save to local storage
+            
             console.log('Response Data:', response.data);
     
             if (response.status === 200 || response.data.success) {
                 const token = response.data.accessToken;
                 sessionStorage.setItem('name', response.data.user.name);
-    
+                
                 console.log('Token before request:', token);
     
                 // Store token in either localStorage or sessionStorage based on 'rememberMe'
@@ -68,7 +72,14 @@ export default function Home() {
                     sessionStorage.setItem('token', token);
                     console.log('Token stored in sessionStorage:', sessionStorage.getItem('token'));
                 }
-    
+                
+                localStorage.setItem('user', JSON.stringify(response.data));
+
+
+
+
+
+
                 // Verify token storage
                 console.log('Token stored in localStorage after setting:', localStorage.getItem('token'));
                 console.log('Token stored in sessionStorage after setting:', sessionStorage.getItem('token'));
@@ -91,6 +102,11 @@ export default function Home() {
             setShowLoading(false);
         }
     };
+
+ 
+    
+   
+
     
     return (
         <div className='w-full h-screen flex justify-center items-center'>

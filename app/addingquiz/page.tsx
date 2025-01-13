@@ -9,22 +9,33 @@ import axios from 'axios';
 
 export default function QuizForm() {
   const { admin } = useAdmin();
-  const [type, setType] = useState('mcq'); // Track the assignment type
+  const [type, setType] = useState('mcq');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('Test your basic skills');
   const [questions, setQuestions] = useState([
     { questionText: '', answers: ['', '', '', ''], correct: [false, false, false, false] },
   ]);
-  const [essayQuestion, setEssayQuestion] = useState({ questionText: '', answer: '' });
+  const [essayQuestions, setEssayQuestions] = useState([{ questionText: '', answer: '' }]);
+  const [structureQuestions, setStructureQuestions] = useState([
+    { questionText: '', answer: '' },
+  ]);
   const [timeLimit, setTimeLimit] = useState(30);
   const [password, setPassword] = useState('');
   const router = useRouter();
 
-  const addQuestion = () => {
+  const addStructureQuestion = () => {
+    setStructureQuestions([...structureQuestions, { questionText: '', answer: '' }]);
+  };
+
+  const addMcqQuestion = () => {
     setQuestions([
       ...questions,
       { questionText: '', answers: ['', '', '', ''], correct: [false, false, false, false] },
     ]);
+  };
+
+  const addEssayQuestion = () => {
+    setEssayQuestions([...essayQuestions, { questionText: '', answer: '' }]);
   };
 
   const handleCancel = () => {
@@ -51,8 +62,13 @@ export default function QuizForm() {
           return false;
         }
       } else if (type === 'essay') {
-        if (!essayQuestion.questionText.trim() || !essayQuestion.answer.trim()) {
-          alert('Essay question and answer are required.');
+        if (essayQuestions.some((q) => !q.questionText.trim() || !q.answer.trim())) {
+          alert('Each essay question and answer are required.');
+          return false;
+        }
+      } else if (type === 'structure') {
+        if (structureQuestions.some((q) => !q.questionText.trim() || !q.answer.trim())) {
+          alert('Each structure question must have text and an answer.');
           return false;
         }
       }
@@ -69,30 +85,22 @@ export default function QuizForm() {
       type,
       title,
       description,
-      timeLimit: type === 'mcq' ? timeLimit.toString() : timeLimit.toString(),
+      timeLimit: timeLimit.toString(),
       questions:
         type === 'mcq'
           ? questions.map((q) => ({
-            questionText: q.questionText,
-            options: q.answers.map((answer, idx) => ({
-              text: answer,
-              isCorrect: q.correct[idx],
-            })),
-          }))
-          : [essayQuestion],
+              questionText: q.questionText,
+              options: q.answers.map((answer, idx) => ({
+                text: answer,
+                isCorrect: q.correct[idx],
+              })),
+            }))
+          : type === 'essay'
+          ? essayQuestions
+          : structureQuestions,
       teacherId: admin?._id,
       password,
     };
-
-    // const essayData = {
-    //   type,
-    //   title,
-    //   description,
-    //   timeLimit: type === 'essay'? timeLimit.toString() : undefined,
-    //   questions: [essayQuestion],
-    //   teacherId: admin?._id,
-    //   password,
-    // }
 
     try {
       const token = localStorage.getItem('token');
@@ -104,35 +112,18 @@ export default function QuizForm() {
 
       console.log(quizData);
 
-      if (type === 'mcq') {
-        const response = await axios.post('http://localhost:4000/api/v1/create-assignment', quizData, {
+      const response = await axios.post(
+        `http://localhost:4000/api/v1/${type}/create`,
+        quizData,
+        {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-        });
-        alert('Assignment created successfully!');
-        router.push('/dashboard');
-      } else {
-        const response = await axios.post('http://localhost:4000/api/v1/essay/create', quizData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        alert('Assignment created successfully!');
-        router.push('/dashboard');
-      }
-
-      // const response = await axios.post('http://localhost:4000/api/v1/create-assignment', quizData, {
-      //   headers: {
-      //     Authorization: `Bearer ${token}`,
-      //     'Content-Type': 'application/json',
-      //   },
-      // });
-
-      // alert('Assignment created successfully!');
-      // router.push('/dashboard');
+        }
+      );
+      alert('Assignment created successfully!');
+      router.push('/dashboard');
     } catch (error) {
       console.error('Error creating assignment:', error);
     }
@@ -152,6 +143,7 @@ export default function QuizForm() {
             className="p-2 bg-gray-100 rounded-lg"
           >
             <option value="mcq">MCQ</option>
+            <option value="structure">Structure</option>
             <option value="essay">Essay</option>
           </select>
         </div>
@@ -183,94 +175,146 @@ export default function QuizForm() {
         />
       </div>
 
-      {type === 'mcq' &&
-        questions.map((q, qIndex) => (
-          <div key={qIndex} className="mt-8">
-            <h2 className="text-xl font-semibold">Question {qIndex + 1}</h2>
-            <input
-              type="text"
-              placeholder="Enter Question"
-              className="w-full p-4 bg-gray-100 rounded-lg"
-              value={q.questionText}
-              onChange={(e) =>
-                setQuestions((prev) => {
-                  const updated = [...prev];
-                  updated[qIndex].questionText = e.target.value;
-                  return updated;
-                })
-              }
-            />
-            <div className="mt-4 space-y-2">
-              {q.answers.map((answer, aIndex) => (
-                <div key={aIndex} className="flex items-center space-x-4">
-                  <input
-                    type="text"
-                    placeholder={`Answer ${aIndex + 1}`}
-                    className="flex-1 p-4 bg-gray-100 rounded-lg"
-                    value={answer}
-                    onChange={(e) =>
-                      setQuestions((prev) => {
-                        const updated = [...prev];
-                        updated[qIndex].answers[aIndex] = e.target.value;
-                        return updated;
-                      })
-                    }
-                  />
-                  <Checkbox
-                    isSelected={q.correct[aIndex]}
-                    onChange={(e) =>
-                      setQuestions((prev) => {
-                        const updated = [...prev];
-                        updated[qIndex].correct[aIndex] = e.target.checked;
-                        return updated;
-                      })
-                    }
-                  >
-                    Correct
-                  </Checkbox>
-                </div>
-              ))}
+      {type === 'mcq' && (
+        <>
+          {questions.map((q, qIndex) => (
+            <div key={qIndex} className="mt-8">
+              <h2 className="text-xl font-semibold">Question {qIndex + 1}</h2>
+              <input
+                type="text"
+                placeholder="Enter Question"
+                className="w-full p-4 bg-gray-100 rounded-lg"
+                value={q.questionText}
+                onChange={(e) =>
+                  setQuestions((prev) => {
+                    const updated = [...prev];
+                    updated[qIndex].questionText = e.target.value;
+                    return updated;
+                  })
+                }
+              />
+              <div className="mt-4 space-y-2">
+                {q.answers.map((answer, aIndex) => (
+                  <div key={aIndex} className="flex items-center space-x-4">
+                    <input
+                      type="text"
+                      placeholder={`Answer ${aIndex + 1}`}
+                      className="flex-1 p-4 bg-gray-100 rounded-lg"
+                      value={answer}
+                      onChange={(e) =>
+                        setQuestions((prev) => {
+                          const updated = [...prev];
+                          updated[qIndex].answers[aIndex] = e.target.value;
+                          return updated;
+                        })
+                      }
+                    />
+                    <Checkbox
+                      isSelected={q.correct[aIndex]}
+                      onChange={(e) =>
+                        setQuestions((prev) => {
+                          const updated = [...prev];
+                          updated[qIndex].correct[aIndex] = e.target.checked;
+                          return updated;
+                        })
+                      }
+                    >
+                      Correct
+                    </Checkbox>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
-
-      {type === 'essay' && (
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold">Essay Question</h2>
-          <input
-            type="text"
-            placeholder="Enter Question"
-            className="w-full p-4 bg-gray-100 rounded-lg"
-            value={essayQuestion.questionText}
-            onChange={(e) => setEssayQuestion({ ...essayQuestion, questionText: e.target.value })}
-          />
-          <textarea
-            placeholder="Enter Answer"
-            className="w-full p-4 bg-gray-100 rounded-lg mt-4"
-            value={essayQuestion.answer}
-            onChange={(e) => setEssayQuestion({ ...essayQuestion, answer: e.target.value })}
-          />
-        </div>
+          ))}
+          <button
+            onClick={addMcqQuestion}
+            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 mt-4"
+          >
+            Add More MCQ Questions
+          </button>
+        </>
       )}
 
-      <div className="mt-8">
-        <label className="block text-sm font-semibold mb-2">Password:</label>
-        <input
-          type="password"
-          placeholder="Enter Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-4 bg-gray-100 rounded-lg"
-        />
-      </div>
+      {type === 'essay' && (
+        <>
+          {essayQuestions.map((q, index) => (
+            <div key={index} className="mt-8">
+              <h2 className="text-xl font-semibold">Essay Question {index + 1}</h2>
+              <input
+                type="text"
+                placeholder="Enter Question"
+                className="w-full p-4 bg-gray-100 rounded-lg"
+                value={q.questionText}
+                onChange={(e) =>
+                  setEssayQuestions((prev) => {
+                    const updated = [...prev];
+                    updated[index].questionText = e.target.value;
+                    return updated;
+                  })
+                }
+              />
+              <textarea
+                placeholder="Enter Answer"
+                className="w-full p-4 bg-gray-100 rounded-lg mt-4"
+                value={q.answer}
+                onChange={(e) =>
+                  setEssayQuestions((prev) => {
+                    const updated = [...prev];
+                    updated[index].answer = e.target.value;
+                    return updated;
+                  })
+                }
+              />
+            </div>
+          ))}
+          <button
+            onClick={addEssayQuestion}
+            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 mt-4"
+          >
+            Add More Essay Questions
+          </button>
+        </>
+      )}
 
-      {type === 'mcq' && (
-        <button
-          onClick={addQuestion}
-          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 mt-4"
-        >
-          Add More Questions
-        </button>
+      {type === 'structure' && (
+        <>
+          {structureQuestions.map((q, index) => (
+            <div key={index} className="mt-8">
+              <h2 className="text-xl font-semibold">Structure Question {index + 1}</h2>
+              <input
+                type="text"
+                placeholder="Enter Question"
+                className="w-full p-4 bg-gray-100 rounded-lg"
+                value={q.questionText}
+                onChange={(e) =>
+                  setStructureQuestions((prev) => {
+                    const updated = [...prev];
+                    updated[index].questionText = e.target.value;
+                    return updated;
+                  })
+                }
+              />
+              <textarea
+                placeholder="Enter Answer"
+                className="w-full p-4 bg-gray-100 rounded-lg mt-4"
+                value={q.answer}
+                onChange={(e) =>
+                  setStructureQuestions((prev) => {
+                    const updated = [...prev];
+                    updated[index].answer = e.target.value;
+                    return updated;
+                  })
+                }
+              />
+            </div>
+          ))}
+          <button
+            onClick={addStructureQuestion}
+            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 mt-4"
+          >
+            Add More Structure Questions
+          </button>
+        </>
       )}
 
       <div className="mt-8 flex gap-4">
