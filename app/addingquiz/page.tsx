@@ -15,7 +15,9 @@ export default function QuizForm() {
   const [questions, setQuestions] = useState([
     { questionText: '', answers: ['', '', '', ''], correct: [false, false, false, false] },
   ]);
-  const [essayQuestions, setEssayQuestions] = useState([{ questionText: '', answer: '' }]);
+  const [essayQuestions, setEssayQuestions] = useState([
+    { questionText: '', answer: '' }
+  ]);
   const [structureQuestions, setStructureQuestions] = useState([
     { questionText: '', answer: '' },
   ]);
@@ -37,7 +39,6 @@ export default function QuizForm() {
   const addEssayQuestion = () => {
     setEssayQuestions([...essayQuestions, { questionText: '', answer: '' }]);
   };
-
   const handleCancel = () => {
     router.push('/dashboard');
   };
@@ -46,6 +47,10 @@ export default function QuizForm() {
     const validateForm = () => {
       if (!title.trim()) {
         alert('Quiz title is required.');
+        return false;
+      }
+      if (!password.trim()) {
+        alert('Quiz password is required.');
         return false;
       }
       if (type === 'mcq') {
@@ -62,72 +67,113 @@ export default function QuizForm() {
           return false;
         }
       } else if (type === 'essay') {
-        if (essayQuestions.some((q) => !q.questionText.trim() || !q.answer.trim())) {
-          alert('Each essay question and answer are required.');
+        if (essayQuestions.some((q) => !q.questionText.trim())) {
+          alert('Each essay question must have text.');
           return false;
         }
       } else if (type === 'structure') {
-        if (structureQuestions.some((q) => !q.questionText.trim() || !q.answer.trim())) {
-          alert('Each structure question must have text and an answer.');
+        if (structureQuestions.some((q) => !q.questionText.trim())) {
+          alert('Each structure question must have text.');
           return false;
         }
-      }
-      if (!password.trim()) {
-        alert('Password is required.');
-        return false;
       }
       return true;
     };
 
     if (!validateForm()) return;
 
-    const quizData = {
-      type,
-      title,
-      description,
-      timeLimit: timeLimit.toString(),
-      questions:
-        type === 'mcq'
-          ? questions.map((q) => ({
-              questionText: q.questionText,
-              options: q.answers.map((answer, idx) => ({
-                text: answer,
-                isCorrect: q.correct[idx],
-              })),
-            }))
-          : type === 'essay'
-          ? essayQuestions
-          : structureQuestions,
-      teacherId: admin?._id,
-      password,
-    };
+  const quizData = {
+    type,
+    title,
+    description,
+    timeLimit: timeLimit.toString(),
+    questions:
+      type === 'mcq'
+        ? questions.map((q) => ({
+            questionText: q.questionText,
+            options: q.answers.map((answer, idx) => ({
+              text: answer,
+              isCorrect: q.correct[idx],
+            })),
+          }))
+        : type === 'essay'
+        ? essayQuestions
+        : structureQuestions,
+    teacherId: admin?._id,
+    creatorId: admin?._id,
+    password,
+  };
 
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('No authentication token found. Please login.');
-        router.push('/login');
-        return;
+  try {
+    const token = localStorage.getItem('token');
+    console.log('Retrieved token:', token); // Debug token
+
+    if (!token) {
+      alert('No authentication token found. Please login.');
+      router.push('/login');
+      return;
+    }
+
+    console.log('Quiz Data:', quizData); // Debug quiz data
+
+    let apiUrl;
+    if (typeof window !== 'undefined') {
+      if (window.location.hostname === 'localhost') {
+        apiUrl = 'http://localhost:4000';
+      } else {
+        apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL || 'http://13.228.36.212';
       }
+      console.log('API URL:', apiUrl); // Debug API URL
+    }
 
-      console.log(quizData);
+    let endpoint;
+    let response;
+    
+    switch(type) {
+      case 'mcq':
+        endpoint = `${apiUrl}/api/v1/create-assignment`;
+        break;
+      case 'essay':
+        endpoint = `${apiUrl}/api/v1/essay/create`;
+        break;
+      case 'structure':
+        endpoint = `${apiUrl}/api/v1/create-structure`;
+        break;
+      default:
+        throw new Error('Invalid question type');
+    }
 
-      const response = await axios.post(
-        `http://localhost:4000/api/v1/${type}/create`,
-        quizData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+    console.log('Making request to endpoint:', endpoint); // Debug endpoint
+
+    response = await axios.post(
+      endpoint,
+      quizData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    console.log('Response:', response.data); // Debug response
+
+    if (response.data.success) {
       alert('Assignment created successfully!');
       router.push('/dashboard');
-    } catch (error) {
-      console.error('Error creating assignment:', error);
+    } else {
+      throw new Error('Failed to create assignment');
     }
-  };
+
+  } catch (error) {
+    console.error('Full error object:', error);
+    if (axios.isAxiosError(error)) {
+      console.error('Error response:', error.response?.data);
+      alert(`Error: ${error.response?.data?.message || error.message}`);
+    } else {
+      alert('An unexpected error occurred');
+    }
+  }};
 
   return (
     <div className="w-full max-w-5xl mx-auto p-8 bg-white rounded-lg shadow-md">
@@ -163,8 +209,16 @@ export default function QuizForm() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
+        <input
+          type="password"
+          placeholder="Assignment Password"
+          className="w-full p-4 bg-gray-100 rounded-lg"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
       </div>
-      <div>
+
+      <div className="mt-4">
         <label className="block text-sm font-semibold mb-2">Time Limit (Minutes):</label>
         <input
           type="number"

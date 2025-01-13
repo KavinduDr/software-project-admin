@@ -4,8 +4,14 @@ import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell } from 
 import { Button } from '@nextui-org/button';
 import { useRouter } from 'next/navigation';
 import { useAdmin } from '../context/AdminContext';
-import Navbar from '../components/Navbar/Navbar';
 import { useQuiz } from '../context/QuizContext';
+
+interface Assignment {
+    _id: string;
+    title: string;
+    questions?: any[];
+    type?: 'quiz' | 'essay' | 'structure';
+}
 
 const Page = () => {
     const router = useRouter();
@@ -13,38 +19,48 @@ const Page = () => {
     const [name, setName] = useState('');
     const [isCopied, setIsCopied] = useState(false);
     const { setQuiz } = useQuiz();
-
-    interface Assignment {
-        _id: string;
-        title: string;
-        questions: { length: number }[];
-    }
-
     const [assignments, setAssignments] = useState<Assignment[]>([]);
-    const [searchTerm, setSearchTerm] = useState('');  // State for search term
-    const [sortOption, setSortOption] = useState<'title' | 'questions'>('title');  // State for sort option
-    const [assignmentType, setAssignmentType] = useState<'quiz' | 'essay'>('quiz');  // State for assignment type
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortOption, setSortOption] = useState<'title' | 'questions'>('title');
+    const [assignmentType, setAssignmentType] = useState<'quiz' | 'essay' | 'structure'>('quiz');
 
     useEffect(() => {
         const fetchAssignments = async () => {
             if (admin && admin._id) {
                 try {
-                    if (assignmentType === 'quiz') {
-                        const response = await fetch(`http://localhost:4000/api/v1/teacher/${admin._id}`);
-                        const data = await response.json();
-                        if (data.success) {
-                            setAssignments(data.assignments);
-                            console.log(`admin: ${admin._id}`);
-                            console.log(`assignments:`, data.assignments);
+                    let endpoint = '';
+                    switch(assignmentType) {
+                        case 'quiz':
+                            endpoint = `http://localhost:4000/api/v1/teacher/${admin._id}`;
+                            break;
+                        case 'essay':
+                            endpoint = `http://localhost:4000/api/v1/essay/teacher/${admin._id}`;
+                            break;
+                        case 'structure':
+                            endpoint = `http://localhost:4000/api/v1/get-all-structures-by-creator/${admin._id}`;
+                            break;
+                    }
+
+                    const response = await fetch(endpoint);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        let fetchedAssignments;
+                        switch(assignmentType) {
+                            case 'quiz':
+                                fetchedAssignments = data.assignments;
+                                break;
+                            case 'essay':
+                                fetchedAssignments = data.essayAssignments;
+                                break;
+                            case 'structure':
+                                fetchedAssignments = data.structures?.map((s: any) => ({
+                                    ...s,
+                                    questions: [{ type: 'structure' }]
+                                })) || [];
+                                break;
                         }
-                    } else if (assignmentType === 'essay') {
-                        const response = await fetch(`http://localhost:4000/api/v1/essay/teacher/${admin._id}`);
-                        const data = await response.json();
-                        if (data.success) {
-                            setAssignments(data.essayAssignments);
-                            console.log(`admin: ${admin._id}`);
-                            console.log(`assignments:`, data.assignments);
-                        }
+                        setAssignments(fetchedAssignments);
                     }
                 } catch (error) {
                     console.error('Failed to fetch assignments', error);
@@ -63,10 +79,23 @@ const Page = () => {
 
     const fetchQuiz = async (id: string) => {
         try {
-            const response = await fetch(`http://localhost:4000/api/v1/${id}`);
+            let endpoint = '';
+            switch(assignmentType) {
+                case 'quiz':
+                    endpoint = `http://localhost:4000/api/v1/${id}`;
+                    break;
+                case 'essay':
+                    endpoint = `http://localhost:4000/api/v1/essay/${id}`;
+                    break;
+                case 'structure':
+                    endpoint = `http://localhost:4000/api/v1/get-structure/${id}`;
+                    break;
+            }
+
+            const response = await fetch(endpoint);
             const data = await response.json();
             if (data.success) {
-                setQuiz(data.assignment);
+                setQuiz(data.assignment || data.structure);
                 router.push(`/viewquiz`);
             }
         } catch (error) {
@@ -76,16 +105,29 @@ const Page = () => {
 
     const editQuiz = async (id: string) => {
         try {
-            const response = await fetch(`http://localhost:4000/api/v1/${id}`);
+            let endpoint = '';
+            switch(assignmentType) {
+                case 'quiz':
+                    endpoint = `http://localhost:4000/api/v1/${id}`;
+                    break;
+                case 'essay':
+                    endpoint = `http://localhost:4000/api/v1/essay/${id}`;
+                    break;
+                case 'structure':
+                    endpoint = `http://localhost:4000/api/v1/get-structure/${id}`;
+                    break;
+            }
+
+            const response = await fetch(endpoint);
             const data = await response.json();
             if (data.success) {
-                setQuiz(data.assignment);
+                setQuiz(data.assignment || data.structure);
                 router.push(`/edit/${id}`);
             }
         } catch (error) {
             console.error('Failed to fetch quiz', error);
         }
-    }
+    };
 
     const getQuizLink = (id: string) => {
         const URL = `http://localhost:3001/signin/${id}`;
@@ -109,7 +151,7 @@ const Page = () => {
                     if (sortOption === "title") {
                         return a.title.localeCompare(b.title);
                     } else if (sortOption === "questions") {
-                        return b.questions.length - a.questions.length;
+                        return (b.questions?.length || 0) - (a.questions?.length || 0);
                     }
                     return 0; // Default sort
                 })
@@ -158,9 +200,10 @@ const Page = () => {
                                 id="assignment"
                                 className="p-2 border border-gray-300 rounded-md"
                                 value={assignmentType}
-                                onChange={(e) => setAssignmentType(e.target.value as 'quiz' | 'essay')}
+                                onChange={(e) => setAssignmentType(e.target.value as 'quiz' | 'essay' | 'structure')}
                             >
                                 <option value="quiz">Quiz</option>
+                                <option value="structure">Structure</option>
                                 <option value="essay">Essay</option>
                             </select>
                         </div>
@@ -187,7 +230,7 @@ const Page = () => {
                                 filteredAssignments.map(assignment => (
                                     <TableRow key={assignment._id} style={{ borderBottom: '1px solid #E2E8F0' }}>
                                         <TableCell>{assignment.title}</TableCell>
-                                        <TableCell>{assignment.questions.length}</TableCell>
+                                        <TableCell>{assignment.questions?.length || 0}</TableCell>
                                         <TableCell>
                                             <Button color="success" variant="ghost" onClick={async () => await fetchQuiz(assignment._id)}>
                                                 View Quiz
@@ -195,7 +238,7 @@ const Page = () => {
                                         </TableCell>
                                         <TableCell>
                                             <Button color="success" variant="ghost" onClick={() => getQuizLink(assignment._id)}>
-                                                {/* {isCopied ? 'Link Copied!' : 'Get Link'} */} Get Link
+                                                Get Link
                                             </Button>
                                         </TableCell>
                                         <TableCell onClick={() => editQuiz(assignment._id)} className='cursor-pointer'>
