@@ -100,31 +100,7 @@ export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
         };
     }, []);
 
-    if (loading) {
-        return (
-            <div className="fixed inset-0 bg-gradient-to-br from-white to-green-50 backdrop-blur-sm flex flex-col justify-center items-center gap-6">
-                <div className="relative">
-                    {/* Main spinner */}
-                    <div className="w-20 h-20 border-4 border-green-200 border-t-green-500 rounded-full animate-spin"></div>
-                    
-                    {/* Inner ripple */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-2 border-green-300 rounded-full animate-ping opacity-75"></div>
-                    
-                    {/* Outer ripple */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border-2 border-green-200 rounded-full animate-pulse opacity-50"></div>
-                </div>
-                
-                <div className="flex flex-col items-center gap-2">
-                    <div className="text-green-600 text-xl font-semibold animate-pulse">
-                        Loading...
-                    </div>
-                    <div className="text-green-400 text-sm animate-pulse">
-                        Please wait
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    
 
     const value = {
         admin,
