@@ -1,4 +1,5 @@
 'use client'
+import { Button } from '@nextui-org/button';
 import { useParams, useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 
@@ -49,7 +50,47 @@ const page = () => {
         if (id) {
             fetchEssay();
         }
-    })
+    }, [id]);
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, questionIndex: number) => {
+        const { name, value } = e.target;
+
+        if(editableEssay) {
+            const updatedQuestions = [...editableEssay.questions];
+
+            if(name === "questionText") {
+                updatedQuestions[questionIndex].questionText = value;
+            } else if(name === "answer") {
+                updatedQuestions[questionIndex].answer = value;
+            }
+
+            setEditableEssay({ ...editableEssay, questions: updatedQuestions });
+        }
+    };
+
+    const addQuestion = () => {
+        if(editableEssay) {
+            const newQuestion: Question = {
+                questionText: "",
+                _id: `${Date.now()}`,
+                answer: ""
+            };
+
+            setEditableEssay({ ...editableEssay, questions: [...editableEssay.questions, newQuestion] });
+        }
+    };
+
+    const removeQuestion = (questionIndex: number) => {
+        if(editableEssay) {
+            const updatedQuestions = [...editableEssay.questions];
+            updatedQuestions.splice(questionIndex, 1);
+            setEditableEssay({ ...editableEssay, questions: updatedQuestions });
+        }
+    };
+
+    const handleGoBack = () => {
+        router.push('/dashboard');
+    };
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-10">
@@ -58,26 +99,31 @@ const page = () => {
                 <p className="text-lg mb-6 text-center">{editableEssay ? editableEssay.description : 'Loading...'}</p>
 
                 {editableEssay?.questions.map((question, questionIndex) => (
-                    <div key={question._id} className="flex flex-col justify-center mb-6 w-full">
-                    <h3 className="text-xl font-semibold mb-2">Question {questionIndex + 1}</h3>
-                    <input
-                        type="text"
-                        name="questionText"
-                        value={question.questionText}
-                        // onChange={(e) => handleInputChange(e, questionIndex)}
-                        placeholder="Enter question text"
-                        className="w-full h-[58px] p-4 text-xl text-black rounded-lg border-2 border-green-500"
-                    />
-                    <input
-                        type="text"
-                        name="answer"
-                        value={question.answer}
-                        // onChange={(e) => handleInputChange(e, questionIndex)}
-                        placeholder="Enter answer"
-                        className="w-full h-[88px] p-4 text-xl text-black rounded-lg border-2 border-green-500"
-                    />
+                    <div key={question._id} className="flex flex-col justify-center mb-6 w-full gap-4">
+                        <h3 className="text-xl font-semibold mb-2">Question {questionIndex + 1}</h3>
+                        <input
+                            type="text"
+                            name="questionText"
+                            value={question.questionText}
+                            // onChange={(e) => handleInputChange(e, questionIndex)}
+                            placeholder="Enter question text"
+                            className="w-full h-[58px] p-4 text-xl text-black rounded-lg border-2 border-green-500"
+                        />
+                        <input
+                            type="text"
+                            name="answer"
+                            value={question.answer}
+                            // onChange={(e) => handleInputChange(e, questionIndex)}
+                            placeholder="Enter answer"
+                            className="w-full h-[88px] p-4 text-xl text-black rounded-lg border-2 border-green-500"
+                        />
                     </div>
                 ))}
+                <div className="flex space-x-4 justify-center mt-6">
+                    <Button>Add Question</Button>
+                    <Button>Save Changes</Button>
+                    <Button onClick={handleGoBack}>Go Back</Button>
+                </div>
             </div>
         </div>
     )
