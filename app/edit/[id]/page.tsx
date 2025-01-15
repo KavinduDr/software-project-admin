@@ -180,7 +180,7 @@ export default function EditQuiz() {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-10 border-solid border-3 border-green-500">
+        <div className="flex flex-col items-center justify-center min-h-screen p-10">
             <div className="w-full max-w-3xl bg-white p-6 rounded-lg shadow-lg border-2 border-green-500">
                 <h1 className="text-3xl font-semibold mb-4 text-center">{editableQuiz ? editableQuiz.title : 'Loading...'}</h1>
                 <p className="text-lg mb-6 text-center">{editableQuiz ? editableQuiz.description : 'Loading...'}</p>

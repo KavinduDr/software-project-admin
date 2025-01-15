@@ -150,7 +150,7 @@ export default function ViewQuiz() {
                     </ul>
                   </TableCell>
                   <TableCell>
-                    <Button onClick={handleCheck} color="success" variant="ghost">
+                    <Button /*onClick={handleCheck}*/ color="success" variant="ghost">
                       Check
                     </Button>
                   </TableCell>

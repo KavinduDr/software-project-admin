@@ -158,7 +158,7 @@ const Page = () => {
         }
     };
 
-    const editQuiz = async (id: string) => {
+    const editQuiz = async (id: string, assignmentType: string) => {
         try {
             let apiUrl;
             // Determine the correct API URL based on the hostname
@@ -170,11 +170,22 @@ const Page = () => {
                     console.log('Deployment URL:', apiUrl);
                 }
             }
-            const response = await fetch(`${apiUrl}/api/v1/${id}`);
-            const data = await response.json();
-            if (data.success) {
-                setQuiz(data.assignment);
-                router.push(`/edit/${id}`);
+            if (assignmentType === 'quiz') {
+                const response = await fetch(`${apiUrl}/api/v1/${id}`);
+                const data = await response.json();
+                if (data.success) {
+                    setQuiz(data.assignment);
+                    router.push(`/edit/${id}`);
+                }
+            }
+            else if (assignmentType === 'essay') {
+                const response = await fetch(`${apiUrl}/api/v1/essay/${id}`);
+                const data = await response.json();
+                console.log(data);
+                if (data.success) {
+                    setEssay(data.essayAssignment);
+                    router.push(`/editessay/${id}`);
+                }
             }
         } catch (error) {
             console.error('Failed to fetch quiz', error);
@@ -292,7 +303,7 @@ const Page = () => {
                                                 {/* {isCopied ? 'Link Copied!' : 'Get Link'} */} Get Link
                                             </Button>
                                         </TableCell>
-                                        <TableCell onClick={() => editQuiz(assignment._id)} className='cursor-pointer'>
+                                        <TableCell onClick={() => editQuiz(assignment._id, assignmentType)} className='cursor-pointer'>
                                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                                                 <path d="M18 2L22 6M2 22L3.2764 17.3199C3.35968 17.0145 3.40131 16.8619 3.46523 16.7195C3.52199 16.5931 3.59172 16.4729 3.67332 16.3609C3.76521 16.2348 3.87711 16.1229 4.1009 15.8991L14.4343 5.56569C14.6323 5.36768 14.7313 5.26867 14.8455 5.23158C14.9459 5.19895 15.0541 5.19895 15.1545 5.23158C15.2687 5.26867 15.3677 5.36768 15.5657 5.56569L18.4343 8.43431C18.6323 8.63232 18.7313 8.73133 18.7684 8.84554C18.801 8.9459 18.801 9.05408 18.7684 9.15444C18.7313 9.26865 18.6323 9.36766 18.4343 9.56567L8.1009 19.8991C7.87711 20.1229 7.76521 20.2348 7.63905 20.3267C7.52709 20.4083 7.40691 20.478 7.28049 20.5348C7.13807 20.5987 6.98549 20.6403 6.6801 20.7236L2 22Z" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                             </svg>
