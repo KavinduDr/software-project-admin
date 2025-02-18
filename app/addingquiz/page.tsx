@@ -153,158 +153,160 @@ export default function QuizForm() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto p-8 bg-white rounded-lg shadow-md">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold mb-6">Create an Assignment</h1>
-        <div className="flex items-center gap-4">
-          <label className="block text-sm font-semibold">Type</label>
-          <select
-            name="type"
-            id="type"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            className="p-2 bg-gray-100 rounded-lg"
-          >
-            <option value="mcq">MCQ</option>
-            <option value="essay">Essay</option>
-          </select>
-        </div>
-      </div>
-
-      {showAlert && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <Alert description={alertMessage} title="Success" />
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-5xl mx-auto p-8 bg-white rounded-lg shadow-md">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold mb-6">Create an Assignment</h1>
+          <div className="flex items-center gap-4">
+            <label className="block text-sm font-semibold">Type</label>
+            <select
+              name="type"
+              id="type"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              className="p-2 bg-gray-100 rounded-lg"
+            >
+              <option value="mcq">MCQ</option>
+              <option value="essay">Essay</option>
+            </select>
           </div>
         </div>
-      )}
 
-      <div className="space-y-4">
-        <input
-          type="text"
-          placeholder="Assignment Title"
-          className="w-full p-4 bg-gray-100 rounded-lg"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-        <textarea
-          placeholder="Assignment Description"
-          className="w-full p-4 bg-gray-100 rounded-lg"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold mb-2">Time Limit (Minutes):</label>
-        <input
-          type="number"
-          value={timeLimit}
-          onChange={(e) => setTimeLimit(Number(e.target.value))}
-          className="p-2 bg-gray-100 rounded-lg"
-          min="1"
-        />
-      </div>
+        {showAlert && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg">
+              <Alert description={alertMessage} title="Success" />
+            </div>
+          </div>
+        )}
 
-      {type === 'mcq' &&
-        questions.map((q, qIndex) => (
-          <div key={qIndex} className="mt-8">
-            <h2 className="text-xl font-semibold">Question {qIndex + 1}</h2>
+        <div className="space-y-4">
+          <input
+            type="text"
+            placeholder="Assignment Title"
+            className="w-full p-4 bg-gray-100 rounded-lg"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          <textarea
+            placeholder="Assignment Description"
+            className="w-full p-4 bg-gray-100 rounded-lg"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold mb-2">Time Limit (Minutes):</label>
+          <input
+            type="number"
+            value={timeLimit}
+            onChange={(e) => setTimeLimit(Number(e.target.value))}
+            className="p-2 bg-gray-100 rounded-lg"
+            min="1"
+          />
+        </div>
+
+        {type === 'mcq' &&
+          questions.map((q, qIndex) => (
+            <div key={qIndex} className="mt-8">
+              <h2 className="text-xl font-semibold">Question {qIndex + 1}</h2>
+              <input
+                type="text"
+                placeholder="Enter Question"
+                className="w-full p-4 bg-gray-100 rounded-lg"
+                value={q.questionText}
+                onChange={(e) =>
+                  setQuestions((prev) => {
+                    const updated = [...prev];
+                    updated[qIndex].questionText = e.target.value;
+                    return updated;
+                  })
+                }
+              />
+              <div className="mt-4 space-y-2">
+                {q.answers.map((answer, aIndex) => (
+                  <div key={aIndex} className="flex items-center space-x-4">
+                    <input
+                      type="text"
+                      placeholder={`Answer ${aIndex + 1}`}
+                      className="flex-1 p-4 bg-gray-100 rounded-lg"
+                      value={answer}
+                      onChange={(e) =>
+                        setQuestions((prev) => {
+                          const updated = [...prev];
+                          updated[qIndex].answers[aIndex] = e.target.value;
+                          return updated;
+                        })
+                      }
+                    />
+                    <Checkbox
+                      isSelected={q.correct[aIndex]}
+                      onChange={(e) =>
+                        setQuestions((prev) => {
+                          const updated = [...prev];
+                          updated[qIndex].correct[aIndex] = e.target.checked;
+                          return updated;
+                        })
+                      }
+                    >
+                      Correct
+                    </Checkbox>
+                  </div>
+                ))}
+              </div>
+              <Button color="danger" variant="ghost" onClick={() => deleteQuestion(qIndex)}>
+                Delete Question
+              </Button>
+            </div>
+          ))}
+
+        {type === 'essay' && (
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold">Essay Question</h2>
             <input
               type="text"
               placeholder="Enter Question"
               className="w-full p-4 bg-gray-100 rounded-lg"
-              value={q.questionText}
-              onChange={(e) =>
-                setQuestions((prev) => {
-                  const updated = [...prev];
-                  updated[qIndex].questionText = e.target.value;
-                  return updated;
-                })
-              }
+              value={essayQuestion.questionText}
+              onChange={(e) => setEssayQuestion({ ...essayQuestion, questionText: e.target.value })}
             />
-            <div className="mt-4 space-y-2">
-              {q.answers.map((answer, aIndex) => (
-                <div key={aIndex} className="flex items-center space-x-4">
-                  <input
-                    type="text"
-                    placeholder={`Answer ${aIndex + 1}`}
-                    className="flex-1 p-4 bg-gray-100 rounded-lg"
-                    value={answer}
-                    onChange={(e) =>
-                      setQuestions((prev) => {
-                        const updated = [...prev];
-                        updated[qIndex].answers[aIndex] = e.target.value;
-                        return updated;
-                      })
-                    }
-                  />
-                  <Checkbox
-                    isSelected={q.correct[aIndex]}
-                    onChange={(e) =>
-                      setQuestions((prev) => {
-                        const updated = [...prev];
-                        updated[qIndex].correct[aIndex] = e.target.checked;
-                        return updated;
-                      })
-                    }
-                  >
-                    Correct
-                  </Checkbox>
-                </div>
-              ))}
-            </div>
-            <Button color="danger" variant="ghost" onClick={() => deleteQuestion(qIndex)}>
-              Delete Question
-            </Button>
+            <textarea
+              placeholder="Enter Answer"
+              className="w-full p-4 bg-gray-100 rounded-lg mt-4"
+              value={essayQuestion.answer}
+              onChange={(e) => setEssayQuestion({ ...essayQuestion, answer: e.target.value })}
+            />
           </div>
-        ))}
+        )}
 
-      {type === 'essay' && (
         <div className="mt-8">
-          <h2 className="text-xl font-semibold">Essay Question</h2>
+          <label className="block text-sm font-semibold mb-2">Password:</label>
           <input
-            type="text"
-            placeholder="Enter Question"
+            type="password"
+            placeholder="Enter Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full p-4 bg-gray-100 rounded-lg"
-            value={essayQuestion.questionText}
-            onChange={(e) => setEssayQuestion({ ...essayQuestion, questionText: e.target.value })}
-          />
-          <textarea
-            placeholder="Enter Answer"
-            className="w-full p-4 bg-gray-100 rounded-lg mt-4"
-            value={essayQuestion.answer}
-            onChange={(e) => setEssayQuestion({ ...essayQuestion, answer: e.target.value })}
           />
         </div>
-      )}
 
-      <div className="mt-8">
-        <label className="block text-sm font-semibold mb-2">Password:</label>
-        <input
-          type="password"
-          placeholder="Enter Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-4 bg-gray-100 rounded-lg"
-        />
-      </div>
+        {type === 'mcq' && (
+          <button
+            onClick={addQuestion}
+            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 mt-4"
+          >
+            Add More Questions
+          </button>
+        )}
 
-      {type === 'mcq' && (
-        <button
-          onClick={addQuestion}
-          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 mt-4"
-        >
-          Add More Questions
-        </button>
-      )}
-
-      <div className="mt-8 flex gap-4">
-        <Button color="success" variant="ghost" onClick={handleSubmit}>
-          Create
-        </Button>
-        <Button color="danger" variant="ghost" onClick={handleCancel}>
-          Cancel
-        </Button>
+        <div className="mt-8 flex gap-4">
+          <Button color="success" variant="ghost" onClick={handleSubmit}>
+            Create
+          </Button>
+          <Button color="danger" variant="ghost" onClick={handleCancel}>
+            Cancel
+          </Button>
+        </div>
       </div>
     </div>
   );
