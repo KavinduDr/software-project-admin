@@ -135,7 +135,7 @@ export default function ViewResult() {
   const router = useRouter();
   const [mcqData, setMcqData] = useState<Answer[]>([]);
   const handleGoBack = () => {
-    router.push(`/viewResult/${quiz._id}`);
+    router.push(`/viewResult/${quiz?._id}`);
   };
 
   //   const [result, setResult] = useState(null);
