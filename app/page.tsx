@@ -228,6 +228,16 @@ export default function Home() {
                                 Sign Up
                             </Button>
                         </div>
+                        {/* Edit Profile Button */}
+<div className="text-center mt-4">
+    <Button
+        variant="outline"
+        className="text-primary border-primary hover:bg-primary hover:text-white"
+        onClick={() => router.push('/profile')}
+    >
+        Edit Profile
+    </Button>
+</div>
                     </div>
                 </CardContent>
             </Card>
