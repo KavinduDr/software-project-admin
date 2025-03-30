@@ -10,6 +10,7 @@ import { Label } from '../../components/ui/label';
 import { PlusCircle, MinusCircle, Save, ArrowLeft, Loader2 } from 'lucide-react';
 import { Separator } from '../../components/ui/separator';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 
 interface Option {
   text: string;
@@ -50,6 +51,7 @@ export default function EditQuiz() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [timeLimit, setTimeLimit] = useState(30); // Default time limit
+  const [type] = useState<'mcq' | 'other'>('mcq'); // Assuming type is 'mcq' for this example
 
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -219,7 +221,7 @@ export default function EditQuiz() {
     <div className="container mx-auto py-8 px-4 max-w-4xl">
       {/* Quiz Edit Section */}
       <Card className="mb-8">
-        <CardHeader>
+        <CardHeader className="bg-gradient-to-r from-blue-500 to-green-500 p-6 text-white rounded-t-lg">
           <CardTitle className="text-3xl">{editableQuiz?.title}</CardTitle>
           <CardDescription className="text-lg">{editableQuiz?.description}</CardDescription>
         </CardHeader>
@@ -227,10 +229,10 @@ export default function EditQuiz() {
 
       {/* Time Settings Section */}
       <Card className="mb-8">
-        <CardHeader>
+        <CardHeader className="bg-green-100 p-4">
           <CardTitle className="text-1xl">Time Settings</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="bg-green-50 p-4">
           <div className="space-y-4">
             <Input
               type="number"
@@ -257,13 +259,13 @@ export default function EditQuiz() {
 
       {editableQuiz?.questions.map((question, questionIndex) => (
         <Card key={question._id} className="mb-6">
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify-between bg-green-100 p-4">
             <CardTitle className="text-xl">Question {questionIndex + 1}</CardTitle>
             <Button variant="destructive" size="icon" onClick={() => removeQuestion(questionIndex)}>
               <MinusCircle className="h-4 w-4" />
             </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="bg-green-50 p-4">
             <div className="space-y-4">
               <Input
                 name="questionText"
@@ -304,9 +306,12 @@ export default function EditQuiz() {
                 ))}
               </div>
 
-              <Button variant="outline" onClick={() => addOption(questionIndex)} className="w-full">
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Add Option
+              <Button
+                onClick={() => addOption(questionIndex)}
+                className="flex items-center space-x-2 text-white px-4 py-2 rounded-xl bg-green-500 hover:bg-green-600 transition-colors w-full"
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>Add Option</span>
               </Button>
             </div>
           </CardContent>
@@ -314,20 +319,23 @@ export default function EditQuiz() {
       ))}
 
       <div className="flex flex-col space-y-4 mt-8">
-        <Button onClick={addQuestion} variant="outline" className="w-full">
-          <PlusCircle className="h-4 w-4 mr-2" />
-          Add Question
+        <Button
+          onClick={addQuestion}
+          className="flex items-center space-x-2 text-white px-4 py-2 rounded-xl bg-green-500 hover:bg-green-600 transition-colors w-full"
+        >
+          <PlusCircle className="h-4 w-4" />
+          <span>Add Question</span>
         </Button>
 
         <Separator className="my-4" />
         
         {/* Password Edit Section */}
         <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="text-1xl">Edit Password</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between bg-green-100 p-4">
             <CardDescription className="text-lg">Change your password here.</CardDescription>
+            <CardTitle className="text-1xl">Edit Password</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="bg-green-50 p-4">
             <div className="space-y-4">
               <Input
                 name="currentPassword"
@@ -353,7 +361,11 @@ export default function EditQuiz() {
                 placeholder="Confirm New Password"
                 className="text-lg"
               />
-              <Button onClick={handlePasswordSave} disabled={isPasswordSaving} className="w-full">
+              <Button
+                onClick={handlePasswordSave}
+                disabled={isPasswordSaving}
+                className="flex items-center space-x-2 text-white bg-green-500 hover:bg-green-700 px-4 py-2 rounded-xl transition-colors w-full"
+              >
                 {isPasswordSaving ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
@@ -366,11 +378,18 @@ export default function EditQuiz() {
         </Card>
 
         <div className="flex space-x-4">
-          <Button variant="outline" onClick={() => router.push('/dashboard')} className="w-full">
+          <Button
+            onClick={() => router.push('/dashboard')}
+            className="flex items-center space-x-2 text-white bg-green-500 hover:bg-green-700 px-4 py-2 rounded-xl transition-colors w-full"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>
-          <Button onClick={handleSave} className="w-full" disabled={isSaving}>
+          <Button
+            onClick={handleSave}
+            className="flex items-center space-x-2 text-white bg-green-500 hover:bg-green-700 px-4 py-2 rounded-xl transition-colors w-full"
+            disabled={isSaving}
+          >
             {isSaving ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
