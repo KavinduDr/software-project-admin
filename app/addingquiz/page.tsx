@@ -91,7 +91,7 @@ export default function QuizForm() {
     }
   };
 
-  const deleteQuestion = (index) => {
+  const deleteQuestion = (index: number) => {
     if (questions.length === 1) {
       setAlertMessage('You need at least one question');
       setShowAlert(true);
@@ -159,7 +159,7 @@ export default function QuizForm() {
   };
 
   // Function to handle API request with retry logic
-  const submitWithRetry = async (endpoint, data, token) => {
+  const submitWithRetry = async (endpoint: string, data: { title: string; description: string; timeLimit: number; password: string; teacherId: string | undefined; startDate: any; endDate: any; guidelines: string[]; }, token: string) => {
     let attempt = 0;
     let lastError;
 
@@ -238,7 +238,7 @@ export default function QuizForm() {
         }
 
         // Format dates
-        const formatDate = (dateString) => {
+        const formatDate = (dateString: string | number | Date | string[]) => {
             if (!dateString.includes('Z')) {
                 return new Date(dateString).toISOString();
             }
