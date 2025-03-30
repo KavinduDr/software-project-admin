@@ -103,6 +103,22 @@ export default function EditQuiz() {
     });
   };
 
+  const addOption = (questionIndex: number) => {
+    if (!editableQuiz) return;
+
+    const updatedQuestions = [...editableQuiz.questions];
+    const newOption: Option = {
+      text: '',
+      isCorrect: false,
+      _id: `${Date.now()}`,
+    };
+    updatedQuestions[questionIndex].options.push(newOption);
+    setEditableQuiz({
+      ...editableQuiz,
+      questions: updatedQuestions,
+    });
+  };
+
   const handleSave = async () => {
     if (!editableQuiz) return;
 
