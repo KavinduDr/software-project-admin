@@ -30,7 +30,7 @@ export default function QuizForm() {
     ]);
   };
 
-  const deleteQuestion = (index) => {
+  const deleteQuestion = (index: number) => {
     setQuestions((prev) => prev.filter((_, qIndex) => qIndex !== index));
     setAlertMessage(`Deleted question ${index + 1}`);
     setShowAlert(true); // Show the alert modal
