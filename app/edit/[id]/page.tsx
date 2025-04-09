@@ -328,8 +328,8 @@ export default function EditQuiz() {
 
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="text-1xl">Edit Password</CardTitle>
-            <CardDescription className="text-lg">Change your password here.</CardDescription>
+            <CardTitle className="text-lg">Edit Password</CardTitle>
+            <CardDescription className="text-1xl">Change your password here.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -357,7 +357,7 @@ export default function EditQuiz() {
                 placeholder="Confirm New Password"
                 className="text-lg"
               />
-              <Button onClick={handlePasswordSave} disabled={isPasswordSaving} className="w-full">
+              <Button onClick={handlePasswordSave} disabled={isPasswordSaving} className="w-full bg-green-600">
                 {isPasswordSaving ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
@@ -374,7 +374,7 @@ export default function EditQuiz() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>
-          <Button onClick={handleSave} className="w-full" disabled={isSaving}>
+          <Button onClick={handleSave} className="w-full bg-green-600" disabled={isSaving}>
             {isSaving ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
