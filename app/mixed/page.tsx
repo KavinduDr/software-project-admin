@@ -83,10 +83,10 @@ export default function MixedForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white p-4 md:p-8">
       {/* Decorative elements */}
-      <div className="fixed top-20 right-40 w-64 h-64 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
-      <div className="fixed bottom-40 left-20 w-72 h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+      <div className="fixed top-20 right-40 w-64 h-64 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+      <div className="fixed bottom-40 left-20 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -95,7 +95,7 @@ export default function MixedForm() {
         className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden relative z-10"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-6 text-white">
+        <div className="bg-gradient-to-r from-blue-500 to-green-500 p-6 text-white">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl md:text-3xl font-bold flex items-center">
               <PlusCircle className="mr-3 h-6 w-6" />
@@ -182,7 +182,7 @@ export default function MixedForm() {
               <input
                 type="text"
                 placeholder="Enter assignment title"
-                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-purple-500 focus:ring focus:ring-purple-200 transition-all"
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
@@ -192,7 +192,7 @@ export default function MixedForm() {
               <label className="block text-sm font-semibold mb-2 text-gray-700">Assignment Description</label>
               <textarea
                 placeholder="Provide instructions for your students"
-                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-purple-500 focus:ring focus:ring-purple-200 transition-all min-h-[100px]"
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all min-h-[100px]"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
@@ -233,7 +233,7 @@ export default function MixedForm() {
                       <input
                         type="text"
                         placeholder="Enter your question"
-                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-purple-500 focus:ring focus:ring-purple-200 transition-all"
+                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all"
                         value={q.questionText}
                         onChange={(e) =>
                           setQuestions((prev) => {
@@ -251,7 +251,7 @@ export default function MixedForm() {
                             <input
                               type="text"
                               placeholder={`Option ${aIndex + 1}`}
-                              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-purple-500 focus:ring focus:ring-purple-200 transition-all"
+                              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all"
                               value={answer}
                               onChange={(e) =>
                                 setQuestions((prev) => {
@@ -280,7 +280,7 @@ export default function MixedForm() {
                     <>
                       <textarea
                         placeholder="Enter your essay question here..."
-                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-purple-500 focus:ring focus:ring-purple-200 transition-all min-h-[100px]"
+                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all min-h-[100px]"
                         value={q.questionText}
                         onChange={(e) =>
                           setQuestions((prev) => {
@@ -293,7 +293,7 @@ export default function MixedForm() {
 
                       <textarea
                         placeholder="Provide a model answer for reference..."
-                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-purple-500 focus:ring focus:ring-purple-200 transition-all min-h-[200px] mt-4"
+                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all min-h-[200px] mt-4"
                         value={q.answer}
                         onChange={(e) =>
                           setQuestions((prev) => {
@@ -338,7 +338,7 @@ export default function MixedForm() {
             </motion.button>
             <motion.button
               onClick={handleSubmit}
-              className="flex items-center space-x-2 text-white bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-xl transition-colors"
+              className="flex items-center space-x-2 text-white bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-xl transition-colors"
               disabled={isSubmitting}
             >
               <Save className="h-4 w-4" />
