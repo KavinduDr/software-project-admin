@@ -29,9 +29,8 @@ export default function QuizForm() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('Test your knowledge');
   const [questions, setQuestions] = useState([
-    { questionText: '', answers: ['', '', '', ''], correct: [false, false, false, false] },
+    { type: 'mcq', questionText: '', answers: ['', '', '', ''], correct: [false, false, false, false] },
   ]);
-  const [essayQuestion, setEssayQuestion] = useState({ questionText: '', answer: '' });
   const [timeLimit, setTimeLimit] = useState(30);
   const [password, setPassword] = useState('');
   const [alertMessage, setAlertMessage] = useState('');
@@ -43,6 +42,7 @@ export default function QuizForm() {
   const [startDate, setStartDate] = useState('');
   const [retryCount, setRetryCount] = useState(0);
   const [maxRetries] = useState(3); // Set maximum retries
+  const [intendedBatch, setIntendedBatch] = useState('');
   const router = useRouter();
 
   // Set default dates when component mounts
@@ -71,23 +71,47 @@ export default function QuizForm() {
     }
   }, []);
 
-  // Add a question to the list
-  const addQuestion = (afterIndex = null) => {
-    if (afterIndex === null) {
-      // Add to the end (original behavior)
-      setQuestions([
-        ...questions,
-        { questionText: '', answers: ['', '', '', ''], correct: [false, false, false, false] },
-      ]);
-    } else {
-      // Insert after the specified index
-      const newQuestions = [...questions];
-      newQuestions.splice(afterIndex + 1, 0, { 
+  // Initialize questions based on type
+  const setTypeAndInitializeQuestions = (newType) => {
+    setType(newType);
+  
+    if (newType === 'mcq') {
+      setQuestions([{ 
+        type: 'mcq', 
         questionText: '', 
         answers: ['', '', '', ''], 
         correct: [false, false, false, false] 
-      });
-      setQuestions(newQuestions);
+      }]);
+    } else if (newType === 'essay') {
+      setQuestions([{ 
+        type: 'essay', 
+        questionText: '', 
+        answer: '' 
+      }]);
+    }
+  };
+
+  const addQuestion = (type, afterIndex = null) => {
+    const newQuestion =
+      type === 'mcq'
+        ? { 
+            type: 'mcq', 
+            questionText: '', 
+            answers: ['', '', '', ''], 
+            correct: [false, false, false, false] 
+          }
+        : { 
+            type: 'essay', 
+            questionText: '', 
+            answer: '' 
+          };
+  
+    if (afterIndex === null) {
+      setQuestions([...questions, newQuestion]);
+    } else {
+      const updatedQuestions = [...questions];
+      updatedQuestions.splice(afterIndex + 1, 0, newQuestion);
+      setQuestions(updatedQuestions);
     }
   };
 
@@ -121,31 +145,40 @@ export default function QuizForm() {
       setShowAlert(true);
       return false;
     }
+
+    if (!intendedBatch.trim()) {
+      setAlertMessage('Intended batch is required.');
+      setShowAlert(true);
+      return false;
+    }
     
-    if (type === 'mcq') {
-      if (questions.some((q) => !q.questionText.trim())) {
-        setAlertMessage('Each question must have text.');
-        setShowAlert(true);
-        return false;
-      }
-      if (questions.some((q) => q.answers.some((answer) => !answer.trim()))) {
-        setAlertMessage('All answers must have text.');
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      
+      if (!q.questionText.trim()) {
+        setAlertMessage(`Question ${i+1} text is required.`);
         setShowAlert(true);
         return false;
       }
       
-      // Fix for the correct answer validation
-      const invalidQuestions = questions.filter(q => !q.correct.includes(true));
-      if (invalidQuestions.length > 0) {
-        setAlertMessage('Each question must have at least one correct answer.');
-        setShowAlert(true);
-        return false;
-      }
-    } else if (type === 'essay') {
-      if (!essayQuestion.questionText.trim() || !essayQuestion.answer.trim()) {
-        setAlertMessage('Essay question and answer are required.');
-        setShowAlert(true);
-        return false;
+      if (q.type === 'mcq') {
+        if (q.answers.some((answer) => !answer.trim())) {
+          setAlertMessage(`All answers for question ${i+1} must have text.`);
+          setShowAlert(true);
+          return false;
+        }
+        
+        if (!q.correct.includes(true)) {
+          setAlertMessage(`Question ${i+1} must have at least one correct answer.`);
+          setShowAlert(true);
+          return false;
+        }
+      } else if (q.type === 'essay') {
+        if (!q.answer || !q.answer.trim()) {
+          setAlertMessage(`Model answer for essay question ${i+1} is required.`);
+          setShowAlert(true);
+          return false;
+        }
       }
     }
     
@@ -154,60 +187,8 @@ export default function QuizForm() {
       setShowAlert(true);
       return false;
     }
-    
+
     return true;
-  };
-
-  // Function to handle API request with retry logic
-  const submitWithRetry = async (endpoint, data, token) => {
-    let attempt = 0;
-    let lastError;
-
-    while (attempt <= maxRetries) {
-      try {
-        if (attempt > 0) {
-          setRetryCount(attempt);
-          setAlertMessage(`Retrying... Attempt ${attempt} of ${maxRetries}`);
-          // No need to setShowAlert(true) as it should already be showing
-        }
-
-        // Increase timeout for each retry
-        const timeout = 20000 + (attempt * 10000); // 20s, 30s, 40s...
-        
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Request timed out')), timeout)
-        );
-        
-        // Try the request with the current timeout
-        const response = await Promise.race([
-          axios.post(endpoint, data, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }),
-          timeoutPromise
-        ]);
-        
-        // If we get here, the request succeeded
-        return response;
-      } catch (error) {
-        lastError = error;
-        console.error(`Attempt ${attempt + 1} failed:`, error);
-        
-        // If it's not a timeout, or we're on our last retry, break out of the loop
-        if (error.message !== 'Request timed out' || attempt === maxRetries) {
-          break;
-        }
-        
-        // Wait before retrying (backoff strategy)
-        await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
-        attempt++;
-      }
-    }
-    
-    // If we get here, all attempts failed
-    throw lastError;
   };
 
   const handleSubmit = async () => {
@@ -219,120 +200,79 @@ export default function QuizForm() {
     setShowAlert(true);
 
     try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            setAlertMessage('No authentication token found. Please login.');
-            setShowAlert(true);
-            router.push('/login');
-            return;
-        }
-
-        // Determine API URL
-        let apiUrl;
-        if (typeof window !== 'undefined') {
-            if (window.location.hostname === 'localhost') {
-                apiUrl = 'http://localhost:4000';
-            } else {
-                apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
-            }
-        }
-
-        // Format dates
-        const formatDate = (dateString) => {
-            if (!dateString.includes('Z')) {
-                return new Date(dateString).toISOString();
-            }
-            return dateString;
-        };
-
-        // Create the payload
-        const assignmentData = {
-            title,
-            description,
-            timeLimit: parseInt(timeLimit, 10),
-            password,
-            teacherId: admin?._id,
-            startDate: formatDate(startDate),
-            endDate: formatDate(mainEndTime), // Use `mainEndTime` as `endDate`
-            guidelines: ["Guideline 1", "Guideline 2", "Guideline 3", "Guideline 4"], // Example guidelines
-        };
-
-        if (type === 'mcq') {
-            // For MCQ quizzes
-            assignmentData.questions = questions.map((q) => ({
-                questionText: q.questionText,
-                options: q.answers.map((answer, idx) => ({
-                    text: answer,
-                    isCorrect: q.correct[idx],
-                })),
-            }));
-
-            console.log("Sending MCQ data:", JSON.stringify(assignmentData, null, 2));
-
-            const endpoint = `${apiUrl}/api/v1/create-assignment`;
-            console.log("Sending to endpoint:", endpoint);
-
-            const response = await submitWithRetry(endpoint, assignmentData, token);
-
-            if (response && response.data) {
-                setAlertMessage('Quiz created successfully!');
-                setShowAlert(true);
-                setTimeout(() => {
-                    setShowAlert(false);
-                    router.push('/dashboard');
-                }, 1500);
-            }
-        } else {
-            // For Essay
-            assignmentData.questions = [
-                {
-                    questionText: essayQuestion.questionText,
-                    answer: essayQuestion.answer,
-                },
-            ];
-
-            console.log("Sending Essay data:", JSON.stringify(assignmentData, null, 2));
-
-            const endpoint = `${apiUrl}/api/v1/essay/create`;
-            console.log("Sending to endpoint:", endpoint);
-
-            const response = await submitWithRetry(endpoint, assignmentData, token);
-
-            if (response && response.data) {
-                setAlertMessage('Essay created successfully!');
-                setShowAlert(true);
-                setTimeout(() => {
-                    setShowAlert(false);
-                    router.push('/dashboard');
-                }, 1500);
-            }
-        }
-    } catch (error) {
-        console.error('Error creating assignment:', error);
-
-        if (error instanceof Error && error.message === 'Request timed out') {
-            setAlertMessage(`Request timed out after ${maxRetries} attempts. The server is not responding.`);
-        } else if (axios.isAxiosError(error) && error.response) {
-            console.error('Server error details:', error.response.data);
-            setAlertMessage(`Error (${error.response.status}): ${error.response.data?.message || 'Server returned an error'}`);
-        } else if (axios.isAxiosError(error) && error.request) {
-            setAlertMessage('No response received from server. Check your network connection.');
-        } else {
-            if (error instanceof Error) {
-              setAlertMessage(`Error: ${error.message}`);
-            } else {
-              setAlertMessage('An unknown error occurred.');
-            }
-        }
-
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setAlertMessage('No authentication token found. Please login.');
         setShowAlert(true);
+        router.push('/login');
+        return;
+      }
+
+      const apiUrl = window.location.hostname === 'localhost'
+        ? 'http://localhost:4000'
+        : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+
+      const formattedQuestions = questions.map((q) => {
+        if (q.type === 'mcq') {
+          return {
+            type: 'mcq',
+            questionText: q.questionText,
+            options: q.answers.map((answer, idx) => ({
+              text: answer,
+              isCorrect: q.correct[idx],
+            })),
+          };
+        } else {
+          return {
+            type: 'essay',
+            questionText: q.questionText,
+            answer: q.answer || '',
+          };
+        }
+      });
+
+      const assignmentData = {
+        title,
+        description,
+        timeLimit: parseInt(timeLimit, 10),
+        password,
+        teacherId: admin?._id,
+        startDate,
+        endDate: mainEndTime,
+        guidelines: ["Guideline 1", "Guideline 2", "Guideline 3", "Guideline 4"],
+        intendedBatch: parseInt(intendedBatch, 10),
+        questions: formattedQuestions,
+      };
+
+      const endpoint = type === 'mcq'
+        ? `${apiUrl}/api/v1/create-assignment`
+        : `${apiUrl}/api/v1/essay/create`;
+
+      const response = await axios.post(endpoint, assignmentData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response && response.data) {
+        setAlertMessage(`${type.charAt(0).toUpperCase() + type.slice(1)} assignment created successfully!`);
+        setShowAlert(true);
+        setTimeout(() => {
+          setShowAlert(false);
+          router.push('/dashboard');
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Error creating assignment:', error);
+      setAlertMessage('An error occurred while creating the assignment.');
+      setShowAlert(true);
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
-};
+  };
 
   return (
-
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white p-4 md:p-8">
       {/* Decorative elements */}
       <div className="fixed top-20 right-40 w-64 h-64 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
@@ -383,7 +323,7 @@ export default function QuizForm() {
                           : 'text-gray-700 bg-white'
                       }`}
                       onClick={() => {
-                        setType('mcq');
+                        setTypeAndInitializeQuestions('mcq');
                         setShowDropdown(false);
                       }}
                     >
@@ -400,13 +340,26 @@ export default function QuizForm() {
                           : 'text-gray-700 bg-white'
                       }`}
                       onClick={() => {
-                        setType('essay');
+                        setTypeAndInitializeQuestions('essay');
                         setShowDropdown(false);
                       }}
                     >
                       <Edit3 className={`h-5 w-5 ${type === 'essay' ? 'text-blue-600' : 'text-gray-600'}`} />
                       <span>Essay</span>
                       {type === 'essay' && <CheckCircle className="h-4 w-4 ml-auto text-blue-600" />}
+                    </motion.button>
+
+                    <motion.button
+                      whileHover={{ backgroundColor: '#e6f7ff' }}
+                      className="w-full text-left px-4 py-3 flex items-center space-x-2 text-gray-700 bg-white"
+                      onClick={() => {
+                        console.log("Navigating to mixed page");
+                        router.push('/mixed')
+                        setShowDropdown(false);
+                      }}
+                    >
+                      <HelpCircle className="h-5 w-5 text-gray-600" />
+                      <span>Mixed</span>
                     </motion.button>
                   </motion.div>
                 )}
@@ -540,53 +493,36 @@ export default function QuizForm() {
 
           {/* Questions Section */}
           <div className="mt-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-                {type === 'mcq' ? 
-                  <HelpCircle className="mr-2 h-5 w-5 text-blue-600" /> : 
-                  <FileText className="mr-2 h-5 w-5 text-blue-600" />
-                }
-                {type === 'mcq' ? 'Quiz Questions' : 'Essay Question'}
-              </h2>
-              
-              {type === 'mcq' && (
-                <motion.button
-                  onClick={() => addQuestion()}
-                  className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <PlusCircle className="h-4 w-4" />
-                  <span>Add Question</span>
-                </motion.button>
-              )}
-            </div>
+            <h2 className="text-xl font-semibold text-gray-800 flex items-center">
+              <HelpCircle className="mr-2 h-5 w-5 text-blue-600" />
+              {type === 'mcq' ? 'MCQ Questions' : type === 'essay' ? 'Essay Questions' : 'Mixed Questions'}
+            </h2>
 
             <AnimatePresence mode="popLayout">
-              {type === 'mcq' ? (
-                questions.map((q, qIndex) => (
-                  <motion.div 
-                    key={qIndex}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="mb-8 p-6 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-medium text-gray-800">Question {qIndex + 1}</h3>
-                      <motion.button
-                        onClick={() => deleteQuestion(qIndex)}
-                        className="text-red-500 hover:text-red-700 flex items-center space-x-1"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="text-sm">Delete</span>
-                      </motion.button>
-                    </div>
-                    
-                    <div className="mb-4">
+              {questions.map((q, qIndex) => (
+                <motion.div
+                  key={qIndex}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="mb-8 p-6 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow"
+                >
+                  {q.type === 'mcq' ? (
+                    <>
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium text-gray-800">MCQ Question {qIndex + 1}</h3>
+                        <motion.button
+                          onClick={() => deleteQuestion(qIndex)}
+                          className="text-red-500 hover:text-red-700 flex items-center space-x-1"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="text-sm">Delete</span>
+                        </motion.button>
+                      </div>
+
                       <input
                         type="text"
                         placeholder="Enter your question"
@@ -600,102 +536,133 @@ export default function QuizForm() {
                           })
                         }
                       />
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <p className="text-sm font-medium text-gray-700">Answer Options:</p>
-                      {q.answers.map((answer, aIndex) => (
-                        <div key={aIndex} className="flex items-center space-x-3">
-                          <div className="flex-1">
-                            <div className="relative">
-                              <input
-                                type="text"
-                                placeholder={`Option ${aIndex + 1}`}
-                                className="w-full pl-3 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all"
-                                value={answer}
-                                onChange={(e) =>
-                                  setQuestions((prev) => {
-                                    const updated = [...prev];
-                                    updated[qIndex].answers[aIndex] = e.target.value;
-                                    return updated;
-                                  })
-                                }
-                              />
-                              {q.correct[aIndex] && (
-                                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                                  <CheckCircle className="h-5 w-5 text-green-500" />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          {/* Fixed checkbox implementation */}
-                          <div className="flex items-center space-x-2">
+
+                      <div className="space-y-3 mt-4">
+                        <p className="text-sm font-medium text-gray-700">Answer Options:</p>
+                        {q.answers.map((answer, aIndex) => (
+                          <div key={aIndex} className="flex items-center space-x-3">
+                            <input
+                              type="text"
+                              placeholder={`Option ${aIndex + 1}`}
+                              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg"
+                              value={answer}
+                              onChange={(e) =>
+                                setQuestions((prev) => {
+                                  const updated = [...prev];
+                                  updated[qIndex].answers[aIndex] = e.target.value;
+                                  return updated;
+                                })
+                              }
+                            />
                             <input
                               type="checkbox"
-                              id={`q${qIndex}-a${aIndex}`}
                               checked={q.correct[aIndex]}
-                              onChange={(e) => {
+                              onChange={(e) =>
                                 setQuestions((prev) => {
                                   const updated = [...prev];
                                   updated[qIndex].correct[aIndex] = e.target.checked;
                                   return updated;
-                                });
-                              }}
-                              className="w-4 h-4 text-green-600 focus:ring-green-500 rounded"
+                                })
+                              }
                             />
-                            <label htmlFor={`q${qIndex}-a${aIndex}`} className="text-sm font-medium text-gray-700">
-                              Correct
-                            </label>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {/* Add per-question "Add More Questions" button */}
-                    {type === 'mcq' && (
-                      <div className="mt-4 flex justify-center">
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium text-gray-800">Essay Question {qIndex + 1}</h3>
                         <motion.button
-                          onClick={() => addQuestion(qIndex)}
-                          className="flex items-center space-x-2 text-green-600 hover:text-green-700 px-4 py-2 rounded-xl bg-green-50 hover:bg-green-100 transition-colors"
+                          onClick={() => deleteQuestion(qIndex)}
+                          className="text-red-500 hover:text-red-700 flex items-center space-x-1"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                         >
-                          <PlusCircle className="h-4 w-4" />
-                          <span>Add Question</span>
+                          <Trash2 className="h-4 w-4" />
+                          <span className="text-sm">Delete</span>
                         </motion.button>
                       </div>
-                    )}
-                  </motion.div>
-                ))
-              ) : (
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="mb-8 p-6 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2 text-gray-700">Question</label>
-                    <textarea
-                      placeholder="Enter your essay question here..."
-                      className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all min-h-[100px]"
-                      value={essayQuestion.questionText}
-                      onChange={(e) => setEssayQuestion({ ...essayQuestion, questionText: e.target.value })}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-gray-700">Model Answer (for grading)</label>
-                    <textarea
-                      placeholder="Provide a model answer for reference..."
-                      className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all min-h-[200px]"
-                      value={essayQuestion.answer}
-                      onChange={(e) => setEssayQuestion({ ...essayQuestion, answer: e.target.value })}
-                    />
-                    <p className="mt-1 text-sm text-gray-500">This answer will be used as a reference for grading</p>
-                  </div>
+
+                      <textarea
+                        placeholder="Enter your essay question here..."
+                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all min-h-[100px]"
+                        value={q.questionText}
+                        onChange={(e) =>
+                          setQuestions((prev) => {
+                            const updated = [...prev];
+                            updated[qIndex].questionText = e.target.value;
+                            return updated;
+                          })
+                        }
+                      />
+
+                      <textarea
+                        placeholder="Provide a model answer for reference..."
+                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all min-h-[200px] mt-4"
+                        value={q.answer}
+                        onChange={(e) =>
+                          setQuestions((prev) => {
+                            const updated = [...prev];
+                            updated[qIndex].answer = e.target.value;
+                            return updated;
+                          })
+                        }
+                      />
+                    </>
+                  )}
+
+                  {/* Add buttons to insert MCQ or Essay below the current question */}
+                  {type === 'mcq' && (
+                    <div className="mt-4 flex justify-center">
+                      <motion.button
+                        onClick={() => addQuestion('mcq', qIndex)}
+                        className="flex items-center space-x-2 text-green-600 hover:text-green-700 px-4 py-2 rounded-xl bg-green-50 hover:bg-green-100 transition-colors"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                        <span>Add MCQ</span>
+                      </motion.button>
+                    </div>
+                  )}
+                  {type === 'essay' && (
+                    <div className="mt-4 flex justify-center">
+                      <motion.button
+                        onClick={() => addQuestion('essay', qIndex)}
+                        className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                        <span>Add Essay</span>
+                      </motion.button>
+                    </div>
+                  )}
+                  {type === 'mixed' && (
+                    <div className="mt-4 flex justify-center space-x-4">
+                      <motion.button
+                        onClick={() => addQuestion('mcq', qIndex)}
+                        className="flex items-center space-x-2 text-green-600 hover:text-green-700 px-4 py-2 rounded-xl bg-green-50 hover:bg-green-100 transition-colors"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                        <span>Add MCQ</span>
+                      </motion.button>
+                      <motion.button
+                        onClick={() => addQuestion('essay', qIndex)}
+                        className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                        <span>Add Essay</span>
+                      </motion.button>
+                    </div>
+                  )}
                 </motion.div>
-              )}
+              ))}
             </AnimatePresence>
           </div>
 
@@ -713,6 +680,21 @@ export default function QuizForm() {
               className="p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full md:w-1/3"
             />
             <p className="mt-1 text-sm text-gray-500">Students will need this password to access the assignment</p>
+          </div>
+
+          <div className="mt-8">
+            <label className="flex items-center text-sm font-semibold mb-2 text-gray-700">
+              <FileText className="mr-2 h-4 w-4 text-blue-600" />
+              Intended Batch
+            </label>
+            <input
+              type="number"
+              placeholder="Enter Batch (e.g., 2025)"
+              value={intendedBatch}
+              onChange={(e) => setIntendedBatch(e.target.value)}
+              className="p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full md:w-1/3"
+            />
+            <p className="mt-1 text-sm text-gray-500">Specify the batch this assignment is intended for (e.g., 2025).</p>
           </div>
 
           {/* Buttons */}
