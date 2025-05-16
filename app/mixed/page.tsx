@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlusCircle, Trash2, Save, X, ListChecks, Edit3, HelpCircle, ChevronDown, CheckCircle } from 'lucide-react';
+import { PlusCircle, Trash2, Save, X, ListChecks, Edit3, HelpCircle, ChevronDown, CheckCircle, Clock, Key, FileText } from 'lucide-react';
 
 export default function MixedForm() {
   const [questions, setQuestions] = useState([
@@ -17,7 +17,30 @@ export default function MixedForm() {
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState(null);
   const [type, setType] = useState('mcq'); // Default to 'mcq'
+  const [timeLimit, setTimeLimit] = useState(30);
+  const [startDate, setStartDate] = useState('');
+  const [mainEndTime, setMainEndTime] = useState('');
+  const [password, setPassword] = useState('');
+  const [intendedBatch, setIntendedBatch] = useState('');
   const router = useRouter();
+
+  useEffect(() => {
+    if (!startDate || !mainEndTime) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      if (!startDate) {
+        const start = new Date(tomorrow);
+        start.setHours(0, 0, 0, 0);
+        setStartDate(start.toISOString().slice(0, 16));
+      }
+      if (!mainEndTime) {
+        const end = new Date(tomorrow);
+        end.setHours(17, 0, 0, 0);
+        setMainEndTime(end.toISOString().slice(0, 16));
+      }
+    }
+  }, []);
 
   const addQuestion = (type, afterIndex = null) => {
     const newQuestion =
@@ -70,16 +93,40 @@ export default function MixedForm() {
     const payload = {
       title,
       description,
+      timeLimit,
+      startDate,
+      endDate: mainEndTime,
+      password,
+      intendedBatch,
       questions: formattedQuestions,
     };
 
-    console.log('Submitting Mixed Assignment:', payload);
+    try {
+      // If you need authentication, add the token as shown below
+      // const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:4000/api/v1//createMixedAssignment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // 'Authorization': `Bearer ${token}`, // Uncomment if needed
+        },
+        body: JSON.stringify(payload),
+      });
 
-    // Simulate API call
-    setTimeout(() => {
+      if (!response.ok) {
+        throw new Error('Failed to create mixed assignment');
+      }
+
+      // Optionally handle response data
+      // const data = await response.json();
+
       setIsSubmitting(false);
       router.push('/dashboard');
-    }, 2000);
+    } catch (error) {
+      setIsSubmitting(false);
+      alert('Error creating mixed assignment');
+      // Optionally handle error UI
+    }
   };
 
   return (
@@ -197,6 +244,82 @@ export default function MixedForm() {
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
+          </div>
+
+          {/* Time and Date Settings */}
+          <div className="mt-8 p-6 bg-blue-50 rounded-xl border border-blue-100">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <Clock className="mr-2 h-5 w-5 text-blue-600" />
+              Time Settings
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Time Limit (Minutes)
+                </label>
+                <input
+                  type="number"
+                  value={timeLimit}
+                  onChange={(e) => setTimeLimit(Number(e.target.value))}
+                  className="p-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full"
+                  min="1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Start Date
+                </label>
+                <input
+                  type="datetime-local"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="p-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  End Date
+                </label>
+                <input
+                  type="datetime-local"
+                  value={mainEndTime}
+                  onChange={(e) => setMainEndTime(e.target.value)}
+                  className="p-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Password */}
+          <div className="mt-8">
+            <label className="flex items-center text-sm font-semibold mb-2 text-gray-700">
+              <Key className="mr-2 h-4 w-4 text-blue-600" />
+              Assignment Password
+            </label>
+            <input
+              type="password"
+              placeholder="Enter Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full md:w-1/3"
+            />
+            <p className="mt-1 text-sm text-gray-500">Students will need this password to access the assignment</p>
+          </div>
+
+          {/* Intended Batch */}
+          <div className="mt-8">
+            <label className="flex items-center text-sm font-semibold mb-2 text-gray-700">
+              <FileText className="mr-2 h-4 w-4 text-blue-600" />
+              Intended Batch
+            </label>
+            <input
+              type="number"
+              placeholder="Enter Batch (e.g., 2025)"
+              value={intendedBatch}
+              onChange={(e) => setIntendedBatch(e.target.value)}
+              className="p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full md:w-1/3"
+            />
+            <p className="mt-1 text-sm text-gray-500">Specify the batch this assignment is intended for (e.g., 2025).</p>
           </div>
 
           {/* Questions Section */}

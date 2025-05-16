@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "@heroui/alert": "^2.2.10",
     "@heroui/checkbox": "^2.3.9",
     "@heroui/system": "^2.4.7",

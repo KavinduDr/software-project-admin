@@ -22,6 +22,7 @@ import {
   ChevronDown,
   RefreshCw
 } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 export default function QuizForm() {
   const { admin } = useAdmin();
@@ -491,181 +492,6 @@ export default function QuizForm() {
             </div>
           </div>
 
-          {/* Questions Section */}
-          <div className="mt-8">
-            <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-              <HelpCircle className="mr-2 h-5 w-5 text-blue-600" />
-              {type === 'mcq' ? 'MCQ Questions' : type === 'essay' ? 'Essay Questions' : 'Mixed Questions'}
-            </h2>
-
-            <AnimatePresence mode="popLayout">
-              {questions.map((q, qIndex) => (
-                <motion.div
-                  key={qIndex}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                  className="mb-8 p-6 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow"
-                >
-                  {q.type === 'mcq' ? (
-                    <>
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium text-gray-800">MCQ Question {qIndex + 1}</h3>
-                        <motion.button
-                          onClick={() => deleteQuestion(qIndex)}
-                          className="text-red-500 hover:text-red-700 flex items-center space-x-1"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="text-sm">Delete</span>
-                        </motion.button>
-                      </div>
-
-                      <input
-                        type="text"
-                        placeholder="Enter your question"
-                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all"
-                        value={q.questionText}
-                        onChange={(e) =>
-                          setQuestions((prev) => {
-                            const updated = [...prev];
-                            updated[qIndex].questionText = e.target.value;
-                            return updated;
-                          })
-                        }
-                      />
-
-                      <div className="space-y-3 mt-4">
-                        <p className="text-sm font-medium text-gray-700">Answer Options:</p>
-                        {q.answers.map((answer, aIndex) => (
-                          <div key={aIndex} className="flex items-center space-x-3">
-                            <input
-                              type="text"
-                              placeholder={`Option ${aIndex + 1}`}
-                              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg"
-                              value={answer}
-                              onChange={(e) =>
-                                setQuestions((prev) => {
-                                  const updated = [...prev];
-                                  updated[qIndex].answers[aIndex] = e.target.value;
-                                  return updated;
-                                })
-                              }
-                            />
-                            <input
-                              type="checkbox"
-                              checked={q.correct[aIndex]}
-                              onChange={(e) =>
-                                setQuestions((prev) => {
-                                  const updated = [...prev];
-                                  updated[qIndex].correct[aIndex] = e.target.checked;
-                                  return updated;
-                                })
-                              }
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium text-gray-800">Essay Question {qIndex + 1}</h3>
-                        <motion.button
-                          onClick={() => deleteQuestion(qIndex)}
-                          className="text-red-500 hover:text-red-700 flex items-center space-x-1"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="text-sm">Delete</span>
-                        </motion.button>
-                      </div>
-
-                      <textarea
-                        placeholder="Enter your essay question here..."
-                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all min-h-[100px]"
-                        value={q.questionText}
-                        onChange={(e) =>
-                          setQuestions((prev) => {
-                            const updated = [...prev];
-                            updated[qIndex].questionText = e.target.value;
-                            return updated;
-                          })
-                        }
-                      />
-
-                      <textarea
-                        placeholder="Provide a model answer for reference..."
-                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all min-h-[200px] mt-4"
-                        value={q.answer}
-                        onChange={(e) =>
-                          setQuestions((prev) => {
-                            const updated = [...prev];
-                            updated[qIndex].answer = e.target.value;
-                            return updated;
-                          })
-                        }
-                      />
-                    </>
-                  )}
-
-                  {/* Add buttons to insert MCQ or Essay below the current question */}
-                  {type === 'mcq' && (
-                    <div className="mt-4 flex justify-center">
-                      <motion.button
-                        onClick={() => addQuestion('mcq', qIndex)}
-                        className="flex items-center space-x-2 text-green-600 hover:text-green-700 px-4 py-2 rounded-xl bg-green-50 hover:bg-green-100 transition-colors"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <PlusCircle className="h-4 w-4" />
-                        <span>Add MCQ</span>
-                      </motion.button>
-                    </div>
-                  )}
-                  {type === 'essay' && (
-                    <div className="mt-4 flex justify-center">
-                      <motion.button
-                        onClick={() => addQuestion('essay', qIndex)}
-                        className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <PlusCircle className="h-4 w-4" />
-                        <span>Add Essay</span>
-                      </motion.button>
-                    </div>
-                  )}
-                  {type === 'mixed' && (
-                    <div className="mt-4 flex justify-center space-x-4">
-                      <motion.button
-                        onClick={() => addQuestion('mcq', qIndex)}
-                        className="flex items-center space-x-2 text-green-600 hover:text-green-700 px-4 py-2 rounded-xl bg-green-50 hover:bg-green-100 transition-colors"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <PlusCircle className="h-4 w-4" />
-                        <span>Add MCQ</span>
-                      </motion.button>
-                      <motion.button
-                        onClick={() => addQuestion('essay', qIndex)}
-                        className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <PlusCircle className="h-4 w-4" />
-                        <span>Add Essay</span>
-                      </motion.button>
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-
           {/* Password */}
           <div className="mt-8">
             <label className="flex items-center text-sm font-semibold mb-2 text-gray-700">
@@ -695,6 +521,206 @@ export default function QuizForm() {
               className="p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full md:w-1/3"
             />
             <p className="mt-1 text-sm text-gray-500">Specify the batch this assignment is intended for (e.g., 2025).</p>
+          </div>
+
+          {/* Questions Section */}
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold text-gray-800 flex items-center">
+              <HelpCircle className="mr-2 h-5 w-5 text-blue-600" />
+              {type === 'mcq' ? 'MCQ Questions' : type === 'essay' ? 'Essay Questions' : 'Mixed Questions'}
+            </h2>
+
+            <DragDropContext
+              onDragEnd={(result) => {
+                if (!result.destination) return;
+                const reordered = Array.from(questions);
+                const [removed] = reordered.splice(result.source.index, 1);
+                reordered.splice(result.destination.index, 0, removed);
+                setQuestions(reordered);
+              }}
+            >
+              <Droppable droppableId="questions-droppable">
+                {(provided) => (
+                  <div ref={provided.innerRef} {...provided.droppableProps}>
+                    <AnimatePresence mode="popLayout">
+                      {questions.map((q, qIndex) => (
+                        <Draggable key={qIndex} draggableId={qIndex.toString()} index={qIndex}>
+                          {(provided, snapshot) => (
+                            <motion.div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -20 }}
+                              transition={{ duration: 0.3 }}
+                              className={`mb-8 p-6 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow ${
+                                snapshot.isDragging ? 'ring-2 ring-blue-400' : ''
+                              }`}
+                            >
+                              {q.type === 'mcq' ? (
+                                <>
+                                  <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-medium text-gray-800">MCQ Question {qIndex + 1}</h3>
+                                    <motion.button
+                                      onClick={() => deleteQuestion(qIndex)}
+                                      className="text-red-500 hover:text-red-700 flex items-center space-x-1"
+                                      whileHover={{ scale: 1.05 }}
+                                      whileTap={{ scale: 0.95 }}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      <span className="text-sm">Delete</span>
+                                    </motion.button>
+                                  </div>
+
+                                  <input
+                                    type="text"
+                                    placeholder="Enter your question"
+                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all"
+                                    value={q.questionText}
+                                    onChange={(e) =>
+                                      setQuestions((prev) => {
+                                        const updated = [...prev];
+                                        updated[qIndex].questionText = e.target.value;
+                                        return updated;
+                                      })
+                                    }
+                                  />
+
+                                  <div className="space-y-3 mt-4">
+                                    <p className="text-sm font-medium text-gray-700">Answer Options:</p>
+                                    {q.answers.map((answer, aIndex) => (
+                                      <div key={aIndex} className="flex items-center space-x-3">
+                                        <input
+                                          type="text"
+                                          placeholder={`Option ${aIndex + 1}`}
+                                          className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg"
+                                          value={answer}
+                                          onChange={(e) =>
+                                            setQuestions((prev) => {
+                                              const updated = [...prev];
+                                              updated[qIndex].answers[aIndex] = e.target.value;
+                                              return updated;
+                                            })
+                                          }
+                                        />
+                                        <input
+                                          type="checkbox"
+                                          checked={q.correct[aIndex]}
+                                          onChange={(e) =>
+                                            setQuestions((prev) => {
+                                              const updated = [...prev];
+                                              updated[qIndex].correct[aIndex] = e.target.checked;
+                                              return updated;
+                                            })
+                                          }
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-medium text-gray-800">Essay Question {qIndex + 1}</h3>
+                                    <motion.button
+                                      onClick={() => deleteQuestion(qIndex)}
+                                      className="text-red-500 hover:text-red-700 flex items-center space-x-1"
+                                      whileHover={{ scale: 1.05 }}
+                                      whileTap={{ scale: 0.95 }}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      <span className="text-sm">Delete</span>
+                                    </motion.button>
+                                  </div>
+
+                                  <textarea
+                                    placeholder="Enter your essay question here..."
+                                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all min-h-[100px]"
+                                    value={q.questionText}
+                                    onChange={(e) =>
+                                      setQuestions((prev) => {
+                                        const updated = [...prev];
+                                        updated[qIndex].questionText = e.target.value;
+                                        return updated;
+                                      })
+                                    }
+                                  />
+
+                                  <textarea
+                                    placeholder="Provide a model answer for reference..."
+                                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all min-h-[200px] mt-4"
+                                    value={q.answer}
+                                    onChange={(e) =>
+                                      setQuestions((prev) => {
+                                        const updated = [...prev];
+                                        updated[qIndex].answer = e.target.value;
+                                        return updated;
+                                      })
+                                    }
+                                  />
+                                </>
+                              )}
+
+                              {/* Add buttons to insert MCQ or Essay below the current question */}
+                              {type === 'mcq' && (
+                                <div className="mt-4 flex justify-center">
+                                  <motion.button
+                                    onClick={() => addQuestion('mcq', qIndex)}
+                                    className="flex items-center space-x-2 text-green-600 hover:text-green-700 px-4 py-2 rounded-xl bg-green-50 hover:bg-green-100 transition-colors"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                  >
+                                    <PlusCircle className="h-4 w-4" />
+                                    <span>Add MCQ</span>
+                                  </motion.button>
+                                </div>
+                              )}
+                              {type === 'essay' && (
+                                <div className="mt-4 flex justify-center">
+                                  <motion.button
+                                    onClick={() => addQuestion('essay', qIndex)}
+                                    className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                  >
+                                    <PlusCircle className="h-4 w-4" />
+                                    <span>Add Essay</span>
+                                  </motion.button>
+                                </div>
+                              )}
+                              {type === 'mixed' && (
+                                <div className="mt-4 flex justify-center space-x-4">
+                                  <motion.button
+                                    onClick={() => addQuestion('mcq', qIndex)}
+                                    className="flex items-center space-x-2 text-green-600 hover:text-green-700 px-4 py-2 rounded-xl bg-green-50 hover:bg-green-100 transition-colors"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                  >
+                                    <PlusCircle className="h-4 w-4" />
+                                    <span>Add MCQ</span>
+                                  </motion.button>
+                                  <motion.button
+                                    onClick={() => addQuestion('essay', qIndex)}
+                                    className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                  >
+                                    <PlusCircle className="h-4 w-4" />
+                                    <span>Add Essay</span>
+                                  </motion.button>
+                                </div>
+                              )}
+                            </motion.div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </AnimatePresence>
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           </div>
 
           {/* Buttons */}
