@@ -9,8 +9,9 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Loader2 } from "lucide-react";
+import { Suspense } from 'react';
 
-export default function ResetPassword() {
+function ResetPasswordContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const email = searchParams.get('email');
@@ -38,7 +39,6 @@ export default function ResetPassword() {
     
         try {
             const resetToken = sessionStorage.getItem('resetToken');
-            // Changed from POST to GET with query parameters
             const response = await axios.get(`${apiUrl}/api/v1/verify-reset-token`, {
                 params: {
                     resetToken,
@@ -204,5 +204,13 @@ export default function ResetPassword() {
                 </CardContent>
             </Card>
         </div>
+    );
+}
+
+export default function ResetPassword() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <ResetPasswordContent />
+        </Suspense>
     );
 }

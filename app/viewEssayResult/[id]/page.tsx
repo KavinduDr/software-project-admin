@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useQuiz } from '../../context/QuizContext';
+import { useEssay } from '../../context/EssayContext';
 import { motion } from 'framer-motion';
 import {
   Download,
@@ -22,7 +22,9 @@ import {
   Share2,
   FileSpreadsheet,
   ChevronDown,
-  Printer
+  Printer,
+  Edit3,
+  FileText
 } from 'lucide-react';
 
 // UI Components
@@ -39,8 +41,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../
 // Add SWR for data fetching and caching
 import useSWR from 'swr';
 import { Breadcrumbs } from '../../components/ui/Breadcrumbs';
+
 // Define interfaces
-interface QuizResult {
+interface EssayResult {
   _id: string;
   registrationNumber: string;
   score: number;
@@ -49,6 +52,8 @@ interface QuizResult {
   submittedAt: string;
   studentName?: string;
   violationCount?: number;
+  essayAnswer?: string;
+  similarityScore?: number;
 }
 
 interface ViolationSummary {
@@ -57,6 +62,7 @@ interface ViolationSummary {
   totalViolations: number;
   violationTypes: string[];
 }
+
 // Create a custom fetcher function
 const fetcher = async (url: string) => {
   const token = localStorage.getItem('token');
@@ -84,8 +90,8 @@ const getApiUrl = () => {
 };
 
 // Helper functions for styling
-function getScoreColor(score: number, total: number): string {
-  const percentage = (score / total) * 100;
+function getScoreColor(score: number): string {
+  const percentage = score * 100;
   if (percentage >= 80) return 'bg-green-100 text-green-800 border-green-200';
   if (percentage >= 60) return 'bg-blue-100 text-blue-800 border-blue-200';
   if (percentage >= 40) return 'bg-amber-100 text-amber-800 border-amber-200';
@@ -123,6 +129,7 @@ function formatDate(dateString: string) {
     minute: '2-digit'
   });
 }
+
 const StatsCard = ({ icon: Icon, label, value, bgColor, description }: {
   icon: any;
   label: string;
@@ -143,9 +150,9 @@ const StatsCard = ({ icon: Icon, label, value, bgColor, description }: {
 );
 
 const SortIcon = ({ column, sortConfig }: {
-  column: keyof QuizResult;
+  column: keyof EssayResult;
   sortConfig: {
-    key: keyof QuizResult | null;
+    key: keyof EssayResult | null;
     direction: 'asc' | 'desc'
   };
 }) => {
@@ -156,25 +163,23 @@ const SortIcon = ({ column, sortConfig }: {
     <SortDesc className="ml-1 w-4 h-4 text-green-600" />
   );
 };
-export default function ViewResult() {
+
+export default function ViewEssayResult() {
   const { id } = useParams();
   const router = useRouter();
-  const { quiz } = useQuiz();
+  const { essay } = useEssay();
   const [searchTerm, setSearchTerm] = useState('');
-  const [totalQuestions, setTotalQuestions] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const apiUrl = getApiUrl();
-  const [registrationNumber, setRegistrationNumber] = useState('');
-  const [studentName, setStudentName] = useState('');
 
   const [sortConfig, setSortConfig] = useState<{
-    key: keyof QuizResult | null;
+    key: keyof EssayResult | null;
     direction: 'asc' | 'desc';
   }>({ key: 'score', direction: 'desc' });
 
   // Use SWR for caching and data fetching
   const { data: resultsData, error: resultsError, isLoading: isResultsLoading } =
-    useSWR(`${apiUrl}/api/v1/results/${id}`, fetcher, {
+    useSWR(`${apiUrl}/api/v1/essay/results/${id}`, fetcher, {
       revalidateOnFocus: false,
       dedupingInterval: 60000,
       focusThrottleInterval: 60000
@@ -188,45 +193,38 @@ export default function ViewResult() {
     });
 
   // Derived state
-  const quizResults = resultsData?.results || [];
+  const essayResults = resultsData?.results || [];
   const violationSummary = violationsData?.summary || [];
   const totalViolations = violationSummary.reduce(
     (sum: number, student: ViolationSummary) => sum + student.totalViolations, 0
   );
 
-  const averageScore = quizResults.length > 0
-    ? Math.round(quizResults.reduce((acc: number, curr: QuizResult) => acc + curr.score, 0) / quizResults.length)
+  const averageScore = essayResults.length > 0
+    ? Number((essayResults.reduce((acc: number, curr: EssayResult) => acc + curr.score, 0) / essayResults.length).toFixed(2))
     : 0;
 
-  const averageTime = quizResults.length > 0
-    ? Number((quizResults.reduce((acc: number, curr: QuizResult) => acc + curr.timeTaken, 0) / quizResults.length).toFixed(1))
+  const averageTime = essayResults.length > 0
+    ? Number((essayResults.reduce((acc: number, curr: EssayResult) => acc + curr.timeTaken, 0) / essayResults.length).toFixed(1))
     : 0;
 
   const loading = isResultsLoading || isViolationsLoading;
   const error = resultsError || violationsError;
 
-  // Set total questions when quiz data is available
-  useEffect(() => {
-    if (quiz?.questions?.length) {
-      setTotalQuestions(quiz.questions.length);
-    }
-  }, [quiz]);
-
   const handleGoBack = () => {
-    router.push('/viewquiz');
+    router.push('/viewessay');
   };
 
   const handleDownloadExcel = async () => {
-    if (!quiz) {
-      console.error('Quiz data is not available');
+    if (!essay) {
+      console.error('Essay data is not available');
       return;
     }
 
-    const assignmentId = quiz._id;
+    const assignmentId = essay._id;
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch(`${apiUrl}/api/v1/downloadExcel/${assignmentId}`, {
+      const response = await fetch(`${apiUrl}/api/v1/essay/downloadExcel/${assignmentId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -242,7 +240,7 @@ export default function ViewResult() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Quiz_${id}.xlsx`;
+      a.download = `Essay_${id}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -251,7 +249,7 @@ export default function ViewResult() {
     }
   };
 
-  const handleSort = (key: keyof QuizResult) => {
+  const handleSort = (key: keyof EssayResult) => {
     setSortConfig({
       key,
       direction: sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc',
@@ -263,14 +261,14 @@ export default function ViewResult() {
     return studentViolation?.totalViolations || 0;
   }, [violationSummary]);
 
-  const filteredResults: QuizResult[] = quizResults
-    .filter((result: QuizResult) =>
+  const filteredResults: EssayResult[] = essayResults
+    .filter((result: EssayResult) =>
       result.registrationNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       result.userId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       result.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       result.score.toString().includes(searchTerm)
     )
-    .sort((a: QuizResult, b: QuizResult) => {
+    .sort((a: EssayResult, b: EssayResult) => {
       if (!sortConfig.key) return 0;
       const aValue = a[sortConfig.key];
       const bValue = b[sortConfig.key];
@@ -280,19 +278,18 @@ export default function ViewResult() {
       }
       return 0;
     });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col">
-        {/* Breadcrumbs container positioned at the top */}
         <div className="w-full max-w-4xl mx-auto pt-4 px-4">
           <Breadcrumbs items={[{ label: 'Loading Results...' }]} />
         </div>
 
-        {/* Loading spinner centered in the remaining space */}
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="inline-block w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mb-4"></div>
-            <p className="text-green-700 font-medium">Loading quiz results...</p>
+            <p className="text-green-700 font-medium">Loading essay results...</p>
           </div>
         </div>
       </div>
@@ -302,12 +299,10 @@ export default function ViewResult() {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col">
-        {/* Breadcrumbs container positioned at the top */}
         <div className="w-full max-w-4xl mx-auto pt-4 px-4">
           <Breadcrumbs items={[{ label: 'Error' }]} />
         </div>
 
-        {/* Card container centered in the remaining space */}
         <div className="flex-1 flex items-center justify-center">
           <div className="max-w-4xl mx-auto px-4">
             <Card className="w-full max-w-md shadow-lg border-red-200">
@@ -319,14 +314,14 @@ export default function ViewResult() {
               </CardHeader>
               <CardContent className="pt-6">
                 <p className="text-gray-600 mb-4">
-                  There was a problem fetching the quiz results. Please try again later.
+                  There was a problem fetching the essay results. Please try again later.
                 </p>
                 <Button
                   onClick={handleGoBack}
                   className="w-full bg-green-600 hover:bg-green-700 text-white"
                 >
                   <ArrowLeft size={16} className="mr-2" />
-                  Return to Quizzes
+                  Return to Essays
                 </Button>
               </CardContent>
             </Card>
@@ -335,6 +330,7 @@ export default function ViewResult() {
       </div>
     );
   }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-8 px-4 sm:px-6 lg:px-8">
       {/* Decorative elements */}
@@ -347,12 +343,13 @@ export default function ViewResult() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {quiz && (
+          {essay && (
             <Breadcrumbs items={[
-              { label: quiz.title, href: '/viewquiz' },
+              { label: essay.title, href: '/viewessay' },
               { label: 'Results' }
             ]} />
           )}
+          
           {/* Header with navigation */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -365,8 +362,8 @@ export default function ViewResult() {
                 <ArrowLeft className="h-5 w-5 text-green-600" />
               </Button>
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{quiz?.title || 'Quiz Results'}</h1>
-                <p className="text-gray-500">Viewing quiz performance summary</p>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{essay?.title || 'Essay Results'}</h1>
+                <p className="text-gray-500">Viewing essay performance summary</p>
               </div>
             </div>
 
@@ -387,16 +384,16 @@ export default function ViewResult() {
                 <StatsCard
                   icon={Users}
                   label="Total Students"
-                  value={quizResults.length}
+                  value={essayResults.length}
                   bgColor="bg-green-50"
-                  description="Students who completed the quiz"
+                  description="Students who completed the essay"
                 />
                 <StatsCard
                   icon={Trophy}
                   label="Average Score"
-                  value={`${averageScore}/${totalQuestions}`}
+                  value={`${(averageScore * 100).toFixed(1)}%`}
                   bgColor="bg-green-50"
-                  description={`${Math.round((averageScore / totalQuestions) * 100)}% average accuracy`}
+                  description="Average similarity score"
                 />
                 <StatsCard
                   icon={Clock}
@@ -426,25 +423,25 @@ export default function ViewResult() {
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-3 h-3 rounded-full bg-green-500"></div>
                       <span className="text-sm text-gray-600">
-                        {quizResults.filter((r: QuizResult): boolean => (r.score / totalQuestions) * 100 >= 80).length} students scored 80% or higher
+                        {essayResults.filter((r: EssayResult): boolean => r.score * 100 >= 80).length} students scored 80% or higher
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                       <span className="text-sm text-gray-600">
-                        {quizResults.filter((r: QuizResult): boolean => (r.score / totalQuestions) * 100 >= 60 && (r.score / totalQuestions) * 100 < 80).length} students scored 60-79%
+                        {essayResults.filter((r: EssayResult): boolean => r.score * 100 >= 60 && r.score * 100 < 80).length} students scored 60-79%
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-3 h-3 rounded-full bg-amber-500"></div>
                       <span className="text-sm text-gray-600">
-                        {quizResults.filter((r: QuizResult): boolean => (r.score / totalQuestions) * 100 >= 40 && (r.score / totalQuestions) * 100 < 60).length} students scored 40-59%
+                        {essayResults.filter((r: EssayResult): boolean => r.score * 100 >= 40 && r.score * 100 < 60).length} students scored 40-59%
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-red-500"></div>
                       <span className="text-sm text-gray-600">
-                        {quizResults.filter((r: QuizResult): boolean => (r.score / totalQuestions) * 100 < 40).length} students scored below 40%
+                        {essayResults.filter((r: EssayResult): boolean => r.score * 100 < 40).length} students scored below 40%
                       </span>
                     </div>
                   </div>
@@ -456,7 +453,7 @@ export default function ViewResult() {
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-gray-600">Fastest</span>
                           <span className="font-medium text-green-600">
-                            {quizResults.length > 0 ? Math.min(...quizResults.map((r: QuizResult): number => r.timeTaken)).toFixed(1) : 0} min
+                            {essayResults.length > 0 ? Math.min(...essayResults.map((r: EssayResult): number => r.timeTaken)).toFixed(1) : 0} min
                           </span>
                         </div>
                         <Progress value={20} className="h-1" />
@@ -472,7 +469,7 @@ export default function ViewResult() {
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-gray-600">Slowest</span>
                           <span className="font-medium text-red-600">
-                            {quizResults.length > 0 ? Math.max(...quizResults.map((r: QuizResult): number => r.timeTaken)).toFixed(1) : 0} min
+                            {essayResults.length > 0 ? Math.max(...essayResults.map((r: EssayResult): number => r.timeTaken)).toFixed(1) : 0} min
                           </span>
                         </div>
                         <Progress value={80} className="h-1" />
@@ -495,7 +492,7 @@ export default function ViewResult() {
                           </p>
                           <p className="flex items-center gap-1">
                             <AlertTriangle size={14} className="text-amber-500" />
-                            {violationSummary.filter((v: ViolationSummary): any => v.totalViolations > 5).length} students require review
+                            {violationSummary.filter((v:ViolationSummary) : any => v.totalViolations > 5).length} students require review
                           </p>
                         </div>
                       </>
@@ -517,11 +514,11 @@ export default function ViewResult() {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <CardTitle className="text-xl font-semibold text-green-700 flex items-center gap-2">
-                    <Users size={20} />
-                    Student Results
+                    <FileText size={20} />
+                    Essay Submissions
                   </CardTitle>
                   <CardDescription className="text-green-600">
-                    {filteredResults.length} students completed this quiz
+                    {filteredResults.length} students completed this essay
                   </CardDescription>
                 </div>
 
@@ -608,7 +605,7 @@ export default function ViewResult() {
                         onClick={() => handleSort('score')}
                       >
                         <div className="flex items-center">
-                          Score
+                          Similarity Score
                           <SortIcon column="score" sortConfig={sortConfig} />
                         </div>
                       </TableHead>
@@ -641,7 +638,7 @@ export default function ViewResult() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredResults.map((result: QuizResult) => (
+                    {filteredResults.map((result: EssayResult) => (
                       <TableRow key={result._id} className="hover:bg-green-50 transition-colors">
                         <TableCell className="font-medium text-gray-700">
                           {result.studentName || result.registrationNumber}
@@ -649,9 +646,9 @@ export default function ViewResult() {
                         <TableCell>
                           <Badge
                             variant="outline"
-                            className={getScoreColor(result.score, totalQuestions)}
+                            className={getScoreColor(result.score)}
                           >
-                            {result.score}/{totalQuestions} ({Math.round((result.score / totalQuestions) * 100)}%)
+                            {(result.score * 100).toFixed(1)}%
                           </Badge>
                         </TableCell>
                         <TableCell className="text-gray-600">
@@ -674,11 +671,11 @@ export default function ViewResult() {
                           <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() => router.push(`/viewResult/${id}/student/${result.userId}`)}
+                            onClick={() => router.push(`/viewEssayResult/${id}/student/${result.userId}`)}
                             className="bg-green-100 hover:bg-green-200 text-green-700"
                           >
                             <Eye className="h-4 w-4 mr-1" />
-                            View Details
+                            View Essay
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -692,7 +689,7 @@ export default function ViewResult() {
               <div className="text-sm text-gray-600">
                 Showing <span className="font-medium text-green-600">{filteredResults.length}</span> results
                 {searchTerm && (
-                  <> filtered from <span className="font-medium text-green-600">{quizResults.length}</span> total results</>
+                  <> filtered from <span className="font-medium text-green-600">{essayResults.length}</span> total results</>
                 )}
               </div>
 
@@ -704,7 +701,7 @@ export default function ViewResult() {
                   className="border-green-200 text-green-700 hover:bg-green-100"
                 >
                   <ArrowLeft className="h-4 w-4 mr-1" />
-                  Back to Quizzes
+                  Back to Essays
                 </Button>
 
                 <Button

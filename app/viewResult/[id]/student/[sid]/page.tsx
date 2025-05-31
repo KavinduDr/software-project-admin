@@ -117,8 +117,8 @@ export default function ViewResult() {
 
       if (typeof window !== 'undefined') {
         apiUrl = window.location.hostname === 'localhost'
-          ? 'http://localhost:4000'
-          : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+          ? 'https://softbackend.run.place'
+          : 'https://softbackend.run.place';
       }
 
       try {
@@ -164,7 +164,8 @@ export default function ViewResult() {
           setStudentDetails({
             name: data.studentInfo.name || 'Student',
             email: data.studentInfo.email || '',
-            id: sid
+            id: sid,
+            registrationNumber: data.studentInfo.registrationNumber || ''
           });
         }
       } catch (error) {
@@ -368,8 +369,8 @@ export default function ViewResult() {
         >
           <Breadcrumbs 
                 items={[
-                  { label: quiz.title, href: '/viewquiz' },
-                  { label: 'Results', href: `/viewResult/${quiz._id}` },
+                  { label: quiz?.title || 'Quiz', href: '/viewquiz' },
+                  { label: 'Results', href: `/viewResult/${quiz?._id || id}` },
                   { label: regNum || `Student ${sid.slice(0, 8)}` }
                 ]} 
               />
@@ -415,7 +416,7 @@ export default function ViewResult() {
                   <h2 className="text-2xl font-bold mb-1">{studentDetails.name}</h2>
                   {studentDetails.email && <p className="text-green-100 mb-2">{studentDetails.email}</p>}
                   
-                  <Badge className="bg-white/20 backdrop-blur-sm text-white border-0 mt-2">Student ID: {studentDetails.id.substring(0, 8)}...</Badge>
+                  <Badge className="bg-white/20 backdrop-blur-sm text-white border-0 mt-2">Student ID: {(typeof studentDetails.id === 'string' ? studentDetails.id.substring(0, 8) : studentDetails.id)}...</Badge>
                 </div>
                 
                 <div className="w-full md:w-2/3 p-8">

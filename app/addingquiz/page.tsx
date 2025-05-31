@@ -6,16 +6,16 @@ import { Button } from '@nextui-org/button';
 import { useAdmin } from '../context/AdminContext';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  FileText, 
-  Clock, 
-  Calendar, 
-  Key, 
-  Save, 
-  X, 
-  PlusCircle, 
-  Trash2, 
-  CheckCircle, 
+import {
+  FileText,
+  Clock,
+  Calendar,
+  Key,
+  Save,
+  X,
+  PlusCircle,
+  Trash2,
+  CheckCircle,
   ListChecks,
   Edit3,
   HelpCircle,
@@ -42,6 +42,7 @@ export default function QuizForm() {
   const [mainEndTime, setMainEndTime] = useState('');
   const [startDate, setStartDate] = useState('');
   const [retryCount, setRetryCount] = useState(0);
+  const [intendedBatch, setIntendedBatch] = useState(''); // New state for intended batch
   const [maxRetries] = useState(3); // Set maximum retries
   const [intendedBatch, setIntendedBatch] = useState('');
   const router = useRouter();
@@ -51,19 +52,19 @@ export default function QuizForm() {
     if (!startDate || !mainStartTime || !mainEndTime) {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      
+
       if (!startDate) {
         const startDate = new Date(tomorrow);
         startDate.setHours(0, 0, 0, 0);
         setStartDate(startDate.toISOString().slice(0, 16));
       }
-      
+
       if (!mainStartTime) {
         const startTime = new Date(tomorrow);
         startTime.setHours(9, 0, 0, 0);
         setMainStartTime(startTime.toISOString().slice(0, 16));
       }
-      
+
       if (!mainEndTime) {
         const endTime = new Date(tomorrow);
         endTime.setHours(17, 0, 0, 0);
@@ -116,7 +117,14 @@ export default function QuizForm() {
     }
   };
 
-  const deleteQuestion = (index) => {
+  interface Question {
+    questionText: string;
+    answers: string[];
+    correct: boolean[];
+    pointsForQuestion: number; // Optional property for points
+  }
+
+  const deleteQuestion = (index: number): void => {
     if (questions.length === 1) {
       setAlertMessage('You need at least one question');
       setShowAlert(true);
@@ -126,8 +134,8 @@ export default function QuizForm() {
       }, 2000);
       return;
     }
-    
-    setQuestions((prev) => prev.filter((_, qIndex) => qIndex !== index));
+
+    setQuestions(prev => prev.filter((_, qIndex) => qIndex !== index));
     setAlertMessage(`Deleted question ${index + 1}`);
     setShowAlert(true);
     setTimeout(() => {
@@ -182,7 +190,7 @@ export default function QuizForm() {
         }
       }
     }
-    
+
     if (!password.trim()) {
       setAlertMessage('Password is required.');
       setShowAlert(true);
@@ -279,7 +287,7 @@ export default function QuizForm() {
       <div className="fixed top-20 right-40 w-64 h-64 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
       <div className="fixed bottom-40 left-20 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -289,13 +297,13 @@ export default function QuizForm() {
         <div className="bg-gradient-to-r from-blue-500 to-green-500 p-6 text-white">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl md:text-3xl font-bold flex items-center">
-              {type === 'mcq' ? 
-                <ListChecks className="mr-3 h-6 w-6" /> : 
+              {type === 'mcq' ?
+                <ListChecks className="mr-3 h-6 w-6" /> :
                 <Edit3 className="mr-3 h-6 w-6" />
               }
               Create {type === 'mcq' ? 'Quiz' : 'Essay'} Assignment
             </h1>
-            
+
             {/* Dropdown menu section */}
             <div className="relative">
               <motion.button
@@ -307,7 +315,7 @@ export default function QuizForm() {
                 <span>Assignment Type</span>
                 <ChevronDown className={`h-4 w-4 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
               </motion.button>
-              
+
               <AnimatePresence>
                 {showDropdown && (
                   <motion.div
@@ -318,11 +326,10 @@ export default function QuizForm() {
                   >
                     <motion.button
                       whileHover={{ backgroundColor: '#e6f7ff' }}
-                      className={`w-full text-left px-4 py-3 flex items-center space-x-2 ${
-                        type === 'mcq' 
-                          ? 'bg-blue-100 text-blue-600 font-medium' 
-                          : 'text-gray-700 bg-white'
-                      }`}
+                      className={`w-full text-left px-4 py-3 flex items-center space-x-2 ${type === 'mcq'
+                        ? 'bg-blue-100 text-blue-600 font-medium'
+                        : 'text-gray-700 bg-white'
+                        }`}
                       onClick={() => {
                         setTypeAndInitializeQuestions('mcq');
                         setShowDropdown(false);
@@ -332,14 +339,13 @@ export default function QuizForm() {
                       <span>Multiple Choice</span>
                       {type === 'mcq' && <CheckCircle className="h-4 w-4 ml-auto text-blue-600" />}
                     </motion.button>
-                    
+
                     <motion.button
                       whileHover={{ backgroundColor: '#e6f7ff' }}
-                      className={`w-full text-left px-4 py-3 flex items-center space-x-2 ${
-                        type === 'essay' 
-                          ? 'bg-blue-100 text-blue-600 font-medium' 
-                          : 'text-gray-700 bg-white'
-                      }`}
+                      className={`w-full text-left px-4 py-3 flex items-center space-x-2 ${type === 'essay'
+                        ? 'bg-blue-100 text-blue-600 font-medium'
+                        : 'text-gray-700 bg-white'
+                        }`}
                       onClick={() => {
                         setTypeAndInitializeQuestions('essay');
                         setShowDropdown(false);
@@ -373,7 +379,7 @@ export default function QuizForm() {
         {/* Alert popup */}
         <AnimatePresence>
           {showAlert && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -390,25 +396,24 @@ export default function QuizForm() {
                     </motion.div>
                   </div>
                 )}
-                
-                <p className={`text-lg ${
-                  alertMessage.includes('Error') || alertMessage.includes('timed out') 
-                    ? 'text-red-600' 
-                    : alertMessage.includes('Processing') || alertMessage.includes('Retrying')
-                      ? 'text-blue-600'
-                      : 'text-green-600'
-                } font-medium mb-4 text-center`}>
+
+                <p className={`text-lg ${alertMessage.includes('Error') || alertMessage.includes('timed out')
+                  ? 'text-red-600'
+                  : alertMessage.includes('Processing') || alertMessage.includes('Retrying')
+                    ? 'text-blue-600'
+                    : 'text-green-600'
+                  } font-medium mb-4 text-center`}>
                   {alertMessage}
                 </p>
-                
+
                 {/* Only show the button for non-processing states */}
                 {!alertMessage.includes('Processing') && !alertMessage.includes('Retrying') && (
-                  <Button 
+                  <Button
                     color={
-                      alertMessage.includes('Error') || alertMessage.includes('timed out') 
-                        ? "danger" 
+                      alertMessage.includes('Error') || alertMessage.includes('timed out')
+                        ? "danger"
                         : "success"
-                    } 
+                    }
                     className="w-full"
                     onClick={() => setShowAlert(false)}
                   >
@@ -433,7 +438,7 @@ export default function QuizForm() {
                 onChange={(e) => setTitle(e.target.value)}
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-semibold mb-2 text-gray-700">Assignment Description</label>
               <textarea
@@ -451,7 +456,7 @@ export default function QuizForm() {
               <Clock className="mr-2 h-5 w-5 text-blue-600" />
               Time Settings
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold mb-2 text-gray-700">
@@ -465,7 +470,7 @@ export default function QuizForm() {
                   min="1"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-semibold mb-2 text-gray-700">
                   Start Date
@@ -477,7 +482,7 @@ export default function QuizForm() {
                   className="p-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-semibold mb-2 text-gray-700">
                   End Date
@@ -723,12 +728,27 @@ export default function QuizForm() {
             </DragDropContext>
           </div>
 
+          {/* Intended Batch */}
+          <div className='mt-8'>
+            <label className="flex items-center text-sm font-semibold mb-2 text-gray-700">
+              <ListChecks className="mr-2 h-4 w-4 text-blue-600" />
+              Intended Batch
+            </label>
+            <input
+              type="text"
+              placeholder="Enter intended batch (e.g., 2023-2024)"
+              value={intendedBatch}
+              onChange={(e) => setIntendedBatch(e.target.value)}
+              className="p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full md:w-1/3"
+            />
+          </div>
+
           {/* Buttons */}
           <div className="mt-12 flex flex-col md:flex-row gap-4 justify-end">
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button 
-                color="danger" 
-                variant="flat" 
+              <Button
+                color="danger"
+                variant="flat"
                 onClick={handleCancel}
                 className="flex items-center justify-center w-full md:w-auto"
               >
@@ -736,10 +756,10 @@ export default function QuizForm() {
                 Cancel
               </Button>
             </motion.div>
-            
+
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button 
-                color="primary" 
+              <Button
+                color="primary"
                 onClick={handleSubmit}
                 isLoading={isSubmitting}
                 className="bg-gradient-to-r from-blue-500 to-green-500 text-white flex items-center justify-center w-full md:w-auto"

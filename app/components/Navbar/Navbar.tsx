@@ -14,11 +14,11 @@ const Sidebar = () => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
-    const [hoverItem, setHoverItem] = useState(null);
+    const [hoverItem, setHoverItem] = useState<number | null>(null);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     
     // Ref for the sidebar to detect clicks outside
-    const sidebarRef = useRef(null);
+    const sidebarRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (admin?.name) {
@@ -33,7 +33,7 @@ const Sidebar = () => {
             if (window.location.hostname === 'localhost') {
                 setApiUrl('http://localhost:4000');
             } else {
-                setApiUrl('http://13.228.36.212');
+                setApiUrl(process.env.NEXT_PUBLIC_API_URL || 'https://softbackend.run.place');
             }
 
             const handleResize = () => {
@@ -44,8 +44,8 @@ const Sidebar = () => {
             };
 
             // Close sidebar when clicking outside (for mobile)
-            const handleClickOutside = (event) => {
-                if (sidebarRef.current && !sidebarRef.current.contains(event.target) && isMobile) {
+            const handleClickOutside = (event: MouseEvent) => {
+                if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node) && isMobile) {
                     setShowMobileMenu(false);
                 }
             };
@@ -84,7 +84,7 @@ const Sidebar = () => {
     if (isSignInPage) return null;
     
     // Get initials for avatar
-    const getInitials = (fullName) => {
+    const getInitials = (fullName: string) => {
         if (!fullName) return 'U';
         return fullName
             .split(' ')

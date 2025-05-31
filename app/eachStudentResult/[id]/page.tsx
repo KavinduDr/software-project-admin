@@ -4,9 +4,21 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation'; // Import useParams for extracting params from URL
 
+interface Result {
+  score: number;
+  timeTaken: number;
+  submittedAt: string;
+  answers: Array<{
+    _id: string;
+    questionId: string;
+    selectedOption: string;
+  }>;
+}
+
 export default function ViewResult() {
+  const router = useRouter();
   const { quizId, studentId } = useParams(); // Use useParams to get quizId and studentId from the URL
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState<Result | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

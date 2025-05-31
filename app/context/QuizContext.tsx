@@ -17,6 +17,10 @@ interface Question {
 interface Quiz {
     _id: string;
     title: string;
+    difficulty: string;
+    category: string;
+    startDate: string;
+    endDate: string;
     description: string;
     questions: Question[];
     teacherId: string;

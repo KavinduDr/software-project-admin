@@ -33,7 +33,7 @@ export default function Home() {
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            setApiUrl(window.location.hostname === 'localhost' ? 'http://localhost:4000' : process.env.NEXT_PUBLIC_DEPLOYMENT_URL || '');
+            setApiUrl(window.location.hostname === 'localhost' ? 'http://localhost:4000' : process.env.NEXT_PUBLIC_DEPLOYMENT_URL || 'https://softbackendnewrender.onrender.com');
         }
     }, []);
 
@@ -66,12 +66,12 @@ export default function Home() {
         return isValid;
     };
 
-    const handleChange = (e) => {
-        const { id, value } = e.target;
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { id, value } = e.target as HTMLInputElement;
         setFormData({ ...formData, [id]: value });
 
         // Clear error when user starts typing
-        if (errors[id]) {
+        if (id in errors) {
             setErrors({ ...errors, [id]: '' });
         }
     };
@@ -120,7 +120,9 @@ export default function Home() {
             }
         } catch (error) {
             console.error('Error during sign in:', error);
-            const errorMessage = error.response?.data?.message || 'Invalid email or password';
+            const errorMessage = axios.isAxiosError(error) && error.response?.data?.message
+                ? error.response.data.message
+                : 'Invalid email or password';
             toast.error(errorMessage);
         } finally {
             setIsLoading(false);
@@ -141,19 +143,19 @@ export default function Home() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 px-4" >
             {/* Cute decorative elements */}
-            < motion.div
-                initial={{ top: 10, left: 10 }}
-                animate={{ top: 50, left: 20 }
+            <motion.div
+                initial={{ top: Math.random() * 100, left: Math.random() * 100 }}
+                animate={{ top: Math.random() * 100, left: Math.random() * 100 }}
+                transition={{ duration: 1.0, repeat: Infinity, repeatType: "reverse" }}
+                className="absolute w-16 h-16 rounded-full bg-green-200 opacity-60"
+            >
+            </motion.div>
+            <motion.div
+                initial={{ top: Math.random() * 100, right: Math.random() * 100 }}
+                animate={{ bottom: Math.random() * 100, right: Math.random() * 100 }
                 }
                 transition={{ duration: 1.0, repeat: Infinity, repeatType: "reverse" }}
-                className="absolute top-10 left-10 w-16 h-16 rounded-full bg-green-200 opacity-60" >
-            </motion.div >
-            <motion.div
-                initial={{ top: 20, right: 20 }}
-                animate={{ bottom: 10, right: 80 }
-                }
-                transition={{ duration: 3.0, repeat: Infinity, repeatType: "reverse" }}
-                className="absolute top-20 right-20 w-24 h-24 rounded-full bg-green-200 opacity-60"></motion.div>
+                className="absolute w-24 h-24 rounded-full bg-green-200 opacity-60"></motion.div>
             <motion.div className="absolute bottom-10 left-1/4 w-20 h-20 rounded-full bg-green-200 opacity-50"></motion.div>
             <motion.div className="absolute bottom-20 right-1/3 w-12 h-12 rounded-full bg-green-100 opacity-30"></motion.div>
 
@@ -284,7 +286,7 @@ export default function Home() {
                         </div>
 
                         <div className="text-center mt-8">
-                            <span className="text-gray-500 text-sm">Don't have an account?</span>
+                            <span className="text-gray-500 text-sm">Don&apos;t have an account?</span>
                             <Button
                                 variant="link"
                                 className="text-green-600 hover:text-green-800 text-sm font-medium"

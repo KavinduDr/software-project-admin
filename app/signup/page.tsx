@@ -33,7 +33,7 @@ export default function SignUp() {
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            setApiUrl(window.location.hostname === 'localhost' ? 'http://localhost:4000' : process.env.NEXT_PUBLIC_DEPLOYMENT_URL || '');
+            setApiUrl(window.location.hostname === 'localhost' ? 'http://localhost:4000' : process.env.NEXT_PUBLIC_DEPLOYMENT_URL || 'https://softbackend.run.place');
         }
     }, []);
 
@@ -86,13 +86,14 @@ export default function SignUp() {
         return isValid;
     };
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
-        setFormData({ ...formData, [id]: value });
+        const key = id as keyof typeof errors;
+        setFormData({ ...formData, [key]: value });
         
         // Clear error when user starts typing
-        if (errors[id]) {
-            setErrors({ ...errors, [id]: '' });
+        if (errors[key]) {
+            setErrors({ ...errors, [key]: '' });
         }
     };
 
@@ -125,7 +126,7 @@ export default function SignUp() {
                     router.push('/dashboard');
                 }
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error during registration:', error);
             const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
             toast.error(errorMessage);

@@ -611,7 +611,10 @@ export default function Page() {
                             {filteredAssignments.length > 3 && (
                                 <Button
                                     variant="ghost"
-                                    onClick={() => document.getElementById('allAssignmentsTable').scrollIntoView({ behavior: 'smooth' })}
+                                    onClick={() => {
+                                        const element = document.getElementById('allAssignmentsTable');
+                                        if (element) element.scrollIntoView({ behavior: 'smooth' });
+                                    }}
                                     className="text-green-600 hover:text-green-700 hover:bg-green-50"
                                 >
                                     View All

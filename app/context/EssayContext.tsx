@@ -13,6 +13,8 @@ interface Essay {
     description: string;
     questions: Question[];
     teacherId: string;
+    startDate: string;
+    endDate: string;
     timeLimit: number;
     createdAt: string;
     updatedAt: string;
